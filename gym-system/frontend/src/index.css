@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Paleta: fondo #222223 · grafito #111111 · tarjetas #3D3D3F · dorado #AC933D · borde #93834C */
+:root {
+  color-scheme: dark; /* selects, calendarios y barras de scroll nativos en oscuro */
+}
+
+body {
+  background-color: #222223;
+  color: #EEEEF3;
+}
+
+::selection {
+  background: #AC933D;
+  color: #111111;
+}
+
+/* Scroll discreto en dorado apagado */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #93834C #111111;
+}

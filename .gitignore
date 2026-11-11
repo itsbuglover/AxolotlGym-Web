@@ -1,0 +1,16 @@
+# Dependencias
+node_modules/
+
+# Build del frontend
+dist/
+
+# Variables de entorno (secretos). Los .env.example SI se suben.
+.env
+.env.*
+!.env.example
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+.vscode/
+*.log
