@@ -66,10 +66,6 @@ export default function Login() {
               {cargando ? "Ingresando..." : "Ingresar"}
             </Boton>
           </form>
-
-          <p className="text-xs text-[#E3E3EC]/60 mt-6">
-            Demo: duena@gym.com / recepcion@gym.com — contraseña 123456
-          </p>
         </div>
       </div>
     </div>
