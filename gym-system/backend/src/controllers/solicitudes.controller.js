@@ -1,38 +1,33 @@
-import { solicitudes, asesorias, siguienteId } from "../data/db.js";
+import { supabase, revisar, rpc, aWeb } from "../data/supabase.js";
 
-export function listarSolicitudes(req, res) {
-  res.json({ ok: true, solicitudes });
+const aSolicitud = (s) => ({
+  id: s.id,
+  clienteNombre: s.cliente,
+  numMembresia: s.numero_membresia,
+  instructorNombre: s.instructor,
+  costo: s.costo,
+  fechaSolicitud: s.fecha_solicitud,
+  estado: aWeb(s.estado), // pendiente | aprobada | rechazada | cancelada
+});
+
+export async function listarSolicitudes(req, res) {
+  const filas = revisar(await supabase.from("solicitudes_lista").select("*").order("id", { ascending: false }));
+  res.json({ ok: true, solicitudes: filas.map(aSolicitud) });
 }
 
-export function contarPendientes(req, res) {
-  const pendientes = solicitudes.filter((s) => s.estado === "pendiente").length;
-  res.json({ ok: true, pendientes });
+export async function contarPendientes(req, res) {
+  const r = await supabase.from("solicitudes_lista").select("id", { count: "exact", head: true }).eq("estado", "PENDIENTE");
+  revisar(r);
+  res.json({ ok: true, pendientes: r.count ?? 0 });
 }
 
-export function aprobarSolicitud(req, res) {
-  const solicitud = solicitudes.find((s) => s.id === Number(req.params.id));
-  if (!solicitud) return res.status(404).json({ ok: false, mensaje: "Solicitud no encontrada" });
-  solicitud.estado = "aprobada";
-  solicitud.leida = true;
-
-  asesorias.push({
-    id: siguienteId(asesorias),
-    clienteId: solicitud.clienteId,
-    instructorId: solicitud.instructorId,
-    estado: "aprobada",
-    dias: [],
-    objetivo: "",
-    costo: solicitud.costo,
-    fechaSolicitud: solicitud.fechaSolicitud,
-  });
-
-  res.json({ ok: true, solicitud, mensaje: "Solicitud aprobada" });
+// resolver_solicitud valida que siga PENDIENTE y que el instructor tenga cupo
+export async function aprobarSolicitud(req, res) {
+  await rpc("resolver_solicitud", { p_id: Number(req.params.id), p_estado: "APROBADA" });
+  res.json({ ok: true, mensaje: "Solicitud aprobada" });
 }
 
-export function rechazarSolicitud(req, res) {
-  const solicitud = solicitudes.find((s) => s.id === Number(req.params.id));
-  if (!solicitud) return res.status(404).json({ ok: false, mensaje: "Solicitud no encontrada" });
-  solicitud.estado = "rechazada";
-  solicitud.leida = true;
-  res.json({ ok: true, solicitud, mensaje: "Solicitud rechazada" });
+export async function rechazarSolicitud(req, res) {
+  await rpc("resolver_solicitud", { p_id: Number(req.params.id), p_estado: "RECHAZADA" });
+  res.json({ ok: true, mensaje: "Solicitud rechazada" });
 }

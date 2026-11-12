@@ -1,45 +1,31 @@
-import { usuarios, solicitudes, asesorias, siguienteId } from "../data/db.js";
+import { supabase, revisar, rpc } from "../data/supabase.js";
 
-// Lista de instructores para la pantalla de asesorias del cliente
-export function listarInstructores(req, res) {
-  const instructores = usuarios
-    .filter((u) => u.rol === "instructor" && u.estado === "activo")
-    .map(({ password, ...resto }) => resto);
+// Estas rutas son para clientes/instructores. La app Android hoy llama a Supabase directo,
+// pero quedan aqui usando las mismas funciones por si se quieren consumir desde la API.
+
+export async function listarInstructores(req, res) {
+  const instructores = revisar(await supabase.from("instructores_lista").select("*").order("nombre"));
   res.json({ ok: true, instructores });
 }
 
-// Cliente solicita asesoria con un instructor -> crea una solicitud pendiente
-export function solicitarAsesoria(req, res) {
-  const { instructorId } = req.body;
-  const clienteId = req.usuario?.id; // viene del token del cliente
-  const instructor = usuarios.find((u) => u.id === Number(instructorId));
-  if (!instructor) return res.status(404).json({ ok: false, mensaje: "Instructor no encontrado" });
-
-  const nueva = {
-    id: siguienteId(solicitudes),
-    clienteId,
-    clienteNombre: req.usuario?.nombre || "Cliente",
-    instructorId: instructor.id,
-    instructorNombre: instructor.nombre,
-    costo: instructor.costoServicio,
-    fechaSolicitud: new Date().toISOString().slice(0, 10),
-    estado: "pendiente",
-    leida: false,
-  };
-  solicitudes.push(nueva);
-  res.status(201).json({ ok: true, solicitud: nueva });
+export async function solicitarAsesoria(req, res) {
+  await rpc("solicitar_asesoria", { p_gmail: req.usuario.gmail, p_instructor_id: Number(req.body.instructorId) });
+  res.status(201).json({ ok: true, mensaje: "Solicitud enviada" });
 }
 
-// Instructor: solo sus clientes con asesoria activa
-export function misClientes(req, res) {
-  const instructorId = req.usuario?.id;
-  const propias = asesorias.filter((a) => a.instructorId === instructorId && a.estado === "aprobada");
-  res.json({ ok: true, asesorias: propias });
+export async function misClientes(req, res) {
+  const filas = await rpc("mis_clientes_instructor", { p_gmail: req.usuario.gmail });
+  const asesorias = filas.map((a) => ({ id: a.r_id, nombre: a.r_nombre, dias: a.r_dias, objetivo: a.r_objetivo }));
+  res.json({ ok: true, asesorias });
 }
 
-export function actualizarAsesoria(req, res) {
-  const asesoria = asesorias.find((a) => a.id === Number(req.params.id));
-  if (!asesoria) return res.status(404).json({ ok: false, mensaje: "Asesoria no encontrada" });
-  Object.assign(asesoria, req.body);
-  res.json({ ok: true, asesoria });
+export async function actualizarAsesoria(req, res) {
+  const { dias = "", objetivo = "" } = req.body;
+  await rpc("guardar_asesoria", {
+    p_gmail: req.usuario.gmail,
+    p_id: Number(req.params.id),
+    p_dias: Array.isArray(dias) ? dias.join(", ") : dias,
+    p_objetivo: objetivo,
+  });
+  res.json({ ok: true, mensaje: "Asesoría actualizada" });
 }

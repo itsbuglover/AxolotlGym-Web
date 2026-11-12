@@ -1,7 +1,6 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 
 import authRoutes from "./src/routes/auth.routes.js";
 import clientesRoutes from "./src/routes/clientes.routes.js";
@@ -12,7 +11,7 @@ import gastosRoutes from "./src/routes/gastos.routes.js";
 import reportesRoutes from "./src/routes/reportes.routes.js";
 import dashboardRoutes from "./src/routes/dashboard.routes.js";
 import asesoriasRoutes from "./src/routes/asesorias.routes.js";
-import qrRoutes from "./src/routes/qr.routes.js";
+import accesoRoutes from "./src/routes/acceso.routes.js";
 
 const app = express();
 app.use(cors());
@@ -28,7 +27,7 @@ app.use("/api/gastos", gastosRoutes);
 app.use("/api/reportes", reportesRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/asesorias", asesoriasRoutes);
-app.use("/api/qr", qrRoutes);
+app.use("/api/acceso", accesoRoutes); // reconocimiento facial
 
 app.get("/", (req, res) => {
   res.json({ ok: true, mensaje: "API Gym System activa" });
@@ -36,7 +35,7 @@ app.get("/", (req, res) => {
 
 // Manejador de errores simple
 app.use((err, req, res, next) => {
-  console.error(err);
+  if (!err.status || err.status >= 500) console.error(err);
   res.status(err.status || 500).json({ ok: false, mensaje: err.message || "Error interno" });
 });
 

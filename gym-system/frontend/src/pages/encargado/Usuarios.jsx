@@ -39,9 +39,16 @@ const vCorreo = (v) => {
   if (!t) return "El correo es obligatorio";
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(t) ? "" : "Correo no válido";
 };
+// Mismas reglas que validar_password() en la base de datos
 const vPassword = (v) => {
   if (!v) return "La contraseña es obligatoria";
-  return v.length >= 8 ? "" : "Mínimo 8 caracteres";
+  if (v.length < 8) return "Mínimo 8 caracteres";
+  if (!/[A-Z]/.test(v)) return "Debe incluir una mayúscula";
+  if (!/[a-z]/.test(v)) return "Debe incluir una minúscula";
+  if (!/[0-9]/.test(v)) return "Debe incluir un número";
+  if (!/[^A-Za-z0-9]/.test(v)) return "Debe incluir un símbolo";
+  if (v === "Axolotl2026") return "Elige una contraseña distinta a la temporal";
+  return "";
 };
 const vMonto = (v, etiqueta) => {
   if (v === "" || v == null) return `${etiqueta} es obligatorio`;
@@ -83,6 +90,9 @@ export default function Usuarios() {
   const [editandoId, setEditandoId] = useState(null); // null = creando, id = editando
   const [form, setForm] = useState(vacio);
   const [errores, setErrores] = useState({});
+  const [errorGeneral, setErrorGeneral] = useState("");
+  const [aviso, setAviso] = useState("");
+  const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {
     cargar();
@@ -104,6 +114,7 @@ export default function Usuarios() {
     setEditandoId(null);
     setForm(vacio);
     setErrores({});
+    setErrorGeneral("");
     setModalAbierto(true);
   }
 
@@ -120,6 +131,7 @@ export default function Usuarios() {
       capacidadMaxima: usuario.capacidadMaxima ?? "",
     });
     setErrores({});
+    setErrorGeneral("");
     setModalAbierto(true);
   }
 
@@ -151,21 +163,37 @@ export default function Usuarios() {
       correo: form.correo.trim(),
     };
 
-    if (editandoId) {
-      // al editar no se manda contraseña
-      const { password, ...sinPassword } = datos;
-      await api.put(`/usuarios/${editandoId}`, sinPassword);
-    } else {
-      await api.post("/usuarios", datos);
+    setGuardando(true);
+    setErrorGeneral("");
+    try {
+      if (editandoId) {
+        // al editar no se manda contraseña
+        const { password, ...sinPassword } = datos;
+        const { data } = await api.put(`/usuarios/${editandoId}`, sinPassword);
+        setAviso(data.mensaje);
+      } else {
+        const { data } = await api.post("/usuarios", datos);
+        setAviso(data.mensaje);
+      }
+      cerrarModal();
+      cargar();
+    } catch (err) {
+      setErrorGeneral(err.response?.data?.mensaje || "No se pudo guardar el usuario");
+    } finally {
+      setGuardando(false);
     }
-
-    cerrarModal();
-    cargar();
   }
 
-  async function eliminar(id) {
-    await api.delete(`/usuarios/${id}`);
-    cargar();
+  async function eliminar(usuario) {
+    if (!window.confirm(`¿Eliminar a ${usuario.nombre}? Esta acción no se puede deshacer.`)) return;
+    try {
+      const { data } = await api.delete(`/usuarios/${usuario.id}`);
+      setAviso(data.mensaje);
+      cargar();
+    } catch (err) {
+      setAviso("");
+      window.alert(err.response?.data?.mensaje || "No se pudo eliminar");
+    }
   }
 
   const columnas = [
@@ -179,7 +207,7 @@ export default function Usuarios() {
       render: (f) => (
         <div className="flex gap-2">
           <Boton variante="outline" onClick={() => abrirEditar(f)}>Editar</Boton>
-          <Boton variante="peligro" onClick={() => eliminar(f.id)}>Eliminar</Boton>
+          <Boton variante="peligro" onClick={() => eliminar(f)}>Eliminar</Boton>
         </div>
       ),
     },
@@ -191,6 +219,12 @@ export default function Usuarios() {
         <h1 className="text-xl font-semibold text-[#EEEEF3] mb-6">Usuarios</h1>
         <Boton onClick={abrirNuevo}>+ Nuevo usuario</Boton>
       </div>
+
+      {aviso && (
+        <p className="mb-4 rounded-lg border border-[#2E8B57] bg-[#2E8B57]/15 px-4 py-2.5 text-sm text-[#3FB27F]">
+          {aviso}
+        </p>
+      )}
 
       <Table columnas={columnas} filas={usuarios} />
 
@@ -229,6 +263,7 @@ export default function Usuarios() {
             options={[
               { value: "recepcion", label: "Recepcion" },
               { value: "instructor", label: "Instructor" },
+              { value: "encargado", label: "Encargado" },
             ]}
           />
           <SelectPaleta
@@ -261,8 +296,10 @@ export default function Usuarios() {
             </>
           )}
 
-          <Boton type="submit" className="w-full mt-2">
-            {editandoId ? "Guardar cambios" : "Guardar usuario"}
+          {errorGeneral && <p className="text-sm text-[#E8706F] mb-3">{errorGeneral}</p>}
+
+          <Boton type="submit" className="w-full mt-2" disabled={guardando}>
+            {guardando ? "Guardando..." : editandoId ? "Guardar cambios" : "Guardar usuario"}
           </Boton>
         </form>
       </Modal>

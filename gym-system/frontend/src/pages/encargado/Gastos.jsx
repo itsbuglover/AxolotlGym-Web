@@ -125,19 +125,27 @@ export default function Gastos() {
       categoria: form.categoria.trim(),
     };
 
-    if (editandoId) {
-      await api.put(`/gastos/${editandoId}`, datos);
-    } else {
-      await api.post("/gastos", datos);
+    try {
+      if (editandoId) {
+        await api.put(`/gastos/${editandoId}`, datos);
+      } else {
+        await api.post("/gastos", datos);
+      }
+      cerrarModal();
+      cargar();
+    } catch (err) {
+      window.alert(err.response?.data?.mensaje || "No se pudo guardar");
     }
-
-    cerrarModal();
-    cargar();
   }
 
   async function eliminar(id) {
-    await api.delete(`/gastos/${id}`);
-    cargar();
+    if (!window.confirm("¿Eliminar este registro?")) return;
+    try {
+      await api.delete(`/gastos/${id}`);
+      cargar();
+    } catch (err) {
+      window.alert(err.response?.data?.mensaje || "No se pudo eliminar");
+    }
   }
 
   const columnas = [

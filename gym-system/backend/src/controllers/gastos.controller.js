@@ -1,29 +1,32 @@
-import { gastos, siguienteId } from "../data/db.js";
+import { supabase, revisar } from "../data/supabase.js";
 
-export function listarGastos(req, res) {
+// Tabla "gastos" (la misma que edita la app). La fecha va en formato YYYY-MM-DD.
+const tabla = () => supabase.from("gastos");
+const datos = ({ concepto, categoria, monto, fecha }) => ({ concepto, categoria, monto: Number(monto), fecha });
+
+export async function listarGastos(req, res) {
+  const gastos = revisar(
+    await tabla().select("*").order("fecha", { ascending: false }).order("id", { ascending: false })
+  );
   res.json({ ok: true, gastos });
 }
 
-export function crearGasto(req, res) {
+export async function crearGasto(req, res) {
   const { concepto, categoria, monto, fecha } = req.body;
   if (!concepto || !categoria || monto == null || !fecha) {
     return res.status(400).json({ ok: false, mensaje: "concepto, categoria, monto y fecha son obligatorios" });
   }
-  const nuevo = { id: siguienteId(gastos), concepto, categoria, monto, fecha };
-  gastos.push(nuevo);
-  res.status(201).json({ ok: true, gasto: nuevo });
+  const [gasto] = revisar(await tabla().insert(datos(req.body)).select());
+  res.status(201).json({ ok: true, gasto });
 }
 
-export function actualizarGasto(req, res) {
-  const gasto = gastos.find((g) => g.id === Number(req.params.id));
-  if (!gasto) return res.status(404).json({ ok: false, mensaje: "Gasto no encontrado" });
-  Object.assign(gasto, req.body);
-  res.json({ ok: true, gasto });
+export async function actualizarGasto(req, res) {
+  const filas = revisar(await tabla().update(datos(req.body)).eq("id", req.params.id).select());
+  if (!filas.length) return res.status(404).json({ ok: false, mensaje: "Gasto no encontrado" });
+  res.json({ ok: true, gasto: filas[0] });
 }
 
-export function eliminarGasto(req, res) {
-  const idx = gastos.findIndex((g) => g.id === Number(req.params.id));
-  if (idx === -1) return res.status(404).json({ ok: false, mensaje: "Gasto no encontrado" });
-  gastos.splice(idx, 1);
+export async function eliminarGasto(req, res) {
+  revisar(await tabla().delete().eq("id", req.params.id));
   res.json({ ok: true, mensaje: "Gasto eliminado" });
 }

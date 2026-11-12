@@ -102,19 +102,27 @@ export default function Servicios() {
       duracion: form.duracion.trim(),
     };
 
-    if (editandoId) {
-      await api.put(`/servicios/${editandoId}`, datos);
-    } else {
-      await api.post("/servicios", datos);
+    try {
+      if (editandoId) {
+        await api.put(`/servicios/${editandoId}`, datos);
+      } else {
+        await api.post("/servicios", datos);
+      }
+      cerrarModal();
+      cargar();
+    } catch (err) {
+      window.alert(err.response?.data?.mensaje || "No se pudo guardar");
     }
-
-    cerrarModal();
-    cargar();
   }
 
   async function eliminar(id) {
-    await api.delete(`/servicios/${id}`);
-    cargar();
+    if (!window.confirm("¿Eliminar este registro?")) return;
+    try {
+      await api.delete(`/servicios/${id}`);
+      cargar();
+    } catch (err) {
+      window.alert(err.response?.data?.mensaje || "No se pudo eliminar");
+    }
   }
 
   const columnas = [

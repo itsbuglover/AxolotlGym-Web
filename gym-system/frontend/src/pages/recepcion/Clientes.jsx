@@ -36,13 +36,29 @@ const vCorreo = (v) => {
 const Err = ({ msg }) =>
   msg ? <p className="text-xs text-red-400 -mt-2 mb-3">{msg}</p> : null;
 
-const formVacio = { nombre: "", apellido: "", telefono: "", correo: "", plan: "" };
+const formVacio = {
+  nombre: "", apellido: "", telefono: "", correo: "", plan: "", metodo: "Efectivo",
+  contactoNombre: "", contactoTelefono: "",
+};
+const METODOS = ["Efectivo", "Tarjeta", "Transferencia"];
 
-const planes = [
-  { value: "trimestral", label: "Trimestral" },
-  { value: "mensual", label: "Mensual" },
-  { value: "visita", label: "Visita" },
-];
+// En la base el nombre se guarda completo: "Juan Carlos Pérez" -> nombre "Juan", apellido "Carlos Pérez"
+function separarNombre(completo = "") {
+  const [nombre = "", ...resto] = completo.trim().split(/\s+/);
+  return { nombre, apellido: resto.join(" ") };
+}
+
+// Select con la paleta: campo #111111, borde #93834C, foco dorado #AC933D
+function SelectCampo({ label, value, onChange, children }) {
+  return (
+    <div className="mb-3">
+      <label className="block text-sm text-[#E3E3EC] mb-1">{label}</label>
+      <select value={value} onChange={onChange} className={`w-full ${campo} ${value ? "text-[#EEEEF3]" : "text-[#E3E3EC]/60"}`}>
+        {children}
+      </select>
+    </div>
+  );
+}
 
 export default function Clientes() {
   const [clientes, setClientes] = useState([]);
@@ -52,10 +68,27 @@ export default function Clientes() {
   const [editandoId, setEditandoId] = useState(null); // null = creando, id = editando
   const [form, setForm] = useState(formVacio);
   const [errores, setErrores] = useState({});
+  const [errorGeneral, setErrorGeneral] = useState("");
+  const [aviso, setAviso] = useState("");
+  const [guardando, setGuardando] = useState(false);
+  const [planes, setPlanes] = useState([]); // tipos_membresia de la base
+  const [renovando, setRenovando] = useState(null); // cliente a renovar
+  const [renovacion, setRenovacion] = useState({ plan: "", metodo: "Efectivo" });
+
+  useEffect(() => {
+    api.get("/clientes/planes").then((r) => setPlanes(r.data.planes));
+  }, []);
 
   useEffect(() => {
     cargar();
   }, [buscar, estado]);
+
+  // El mensaje de exito se quita solo
+  useEffect(() => {
+    if (!aviso) return;
+    const t = setTimeout(() => setAviso(""), 5000);
+    return () => clearTimeout(t);
+  }, [aviso]);
 
   async function cargar() {
     const { data } = await api.get("/clientes", { params: { buscar, estado } });
@@ -73,20 +106,33 @@ export default function Clientes() {
     setEditandoId(null);
     setForm(formVacio);
     setErrores({});
+    setErrorGeneral("");
     setModalAbierto(true);
   }
 
-  function abrirEditar(cliente) {
+  async function abrirEditar(cliente) {
     setEditandoId(cliente.id);
     setForm({
-      nombre: cliente.nombre ?? "",
-      apellido: cliente.apellido ?? "",
+      ...formVacio,
+      ...separarNombre(cliente.nombre),
       telefono: cliente.telefono ?? "",
       correo: cliente.correo ?? "",
       plan: cliente.plan ?? "",
     });
     setErrores({});
+    setErrorGeneral("");
     setModalAbierto(true);
+    // El contacto de emergencia no viene en la lista; se pide aparte
+    try {
+      const { data } = await api.get(`/clientes/${cliente.id}`);
+      setForm((f) => ({
+        ...f,
+        contactoNombre: data.cliente.contactoNombre ?? "",
+        contactoTelefono: data.cliente.contactoTelefono ?? "",
+      }));
+    } catch {
+      /* se puede editar sin el contacto precargado */
+    }
   }
 
   function cerrarModal() {
@@ -94,6 +140,7 @@ export default function Clientes() {
     setEditandoId(null);
     setForm(formVacio);
     setErrores({});
+    setErrorGeneral("");
   }
 
   async function guardarCliente(e) {
@@ -101,41 +148,70 @@ export default function Clientes() {
 
     const errs = {
       nombre: vNombre(form.nombre, "Nombre"),
-      apellido: vNombre(form.apellido, "Apellido"),
+      apellido: editandoId && !form.apellido ? "" : vNombre(form.apellido, "Apellido"),
       telefono: vTelefono(form.telefono),
       correo: vCorreo(form.correo),
-      plan: form.plan ? "" : "Selecciona un plan",
+      plan: editandoId || form.plan ? "" : "Selecciona un plan",
+      contactoNombre: vNombre(form.contactoNombre, "El contacto de emergencia"),
+      contactoTelefono: /^\d{10}$/.test(form.contactoTelefono) ? "" : "El teléfono del contacto debe tener 10 dígitos",
     };
     setErrores(errs);
     if (Object.values(errs).some(Boolean)) return;
 
     const datos = {
-      ...form,
-      nombre: form.nombre.trim(),
-      apellido: form.apellido.trim(),
+      nombre: `${form.nombre.trim()} ${form.apellido.trim()}`,
       correo: form.correo.trim(),
+      telefono: form.telefono,
+      contactoNombre: form.contactoNombre.trim(),
+      contactoTelefono: form.contactoTelefono,
     };
 
-    if (editandoId) {
-      await api.put(`/clientes/${editandoId}`, datos);
-    } else {
-      await api.post("/clientes", datos);
+    setGuardando(true);
+    setErrorGeneral("");
+    try {
+      if (editandoId) {
+        await api.put(`/clientes/${editandoId}`, datos);
+        setAviso("Cliente actualizado");
+      } else {
+        const { data } = await api.post("/clientes", { ...datos, plan: form.plan, metodo: form.metodo });
+        setAviso(data.mensaje);
+      }
+      cerrarModal();
+      cargar();
+    } catch (err) {
+      setErrorGeneral(err.response?.data?.mensaje || "No se pudo guardar el cliente");
+    } finally {
+      setGuardando(false);
     }
-
-    cerrarModal();
-    cargar();
   }
 
-  async function renovar(id) {
-    await api.put(`/clientes/${id}/renovar`);
-    cargar();
+  function abrirRenovar(cliente) {
+    setRenovando(cliente);
+    setRenovacion({ plan: cliente.plan || planes[0]?.nombre || "", metodo: "Efectivo" });
+    setErrorGeneral("");
+  }
+
+  async function renovar(e) {
+    e.preventDefault();
+    setGuardando(true);
+    setErrorGeneral("");
+    try {
+      const { data } = await api.put(`/clientes/${renovando.id}/renovar`, renovacion);
+      setAviso(data.mensaje);
+      setRenovando(null);
+      cargar();
+    } catch (err) {
+      setErrorGeneral(err.response?.data?.mensaje || "No se pudo renovar");
+    } finally {
+      setGuardando(false);
+    }
   }
 
   const columnas = [
     {
       key: "nombre",
       label: "Nombre",
-      render: (f) => `${f.nombre ?? ""} ${f.apellido ?? ""}`.trim(),
+      render: (f) => f.nombre,
     },
     { key: "numMembresia", label: "Membresia" },
     {
@@ -144,16 +220,17 @@ export default function Clientes() {
       render: (f) => <span className="capitalize">{f.plan}</span>,
     },
     { key: "fechaRegistro", label: "Fecha registro" },
+    { key: "vence", label: "Vence", render: (f) => f.vence || "—" },
     { key: "estado", label: "Estado", render: (f) => <Badge estado={f.estado} /> },
     {
       key: "acciones",
       label: "Acciones",
-      render: (f) =>
-        f.estado === "activo" ? (
+      render: (f) => (
+        <div className="flex gap-2">
           <Boton variante="outline" onClick={() => abrirEditar(f)}>Editar</Boton>
-        ) : (
-          <Boton variante="outline" onClick={() => renovar(f.id)}>Renovar</Boton>
-        ),
+          {f.estado !== "activo" && <Boton onClick={() => abrirRenovar(f)}>Renovar</Boton>}
+        </div>
+      ),
     },
   ];
 
@@ -182,7 +259,45 @@ export default function Clientes() {
         </select>
       </div>
 
+      {aviso && (
+        <p className="mb-4 rounded-lg border border-[#2E8B57] bg-[#2E8B57]/15 px-4 py-2.5 text-sm text-[#3FB27F]">
+          {aviso}
+        </p>
+      )}
+
       <Table columnas={columnas} filas={clientes} />
+
+      <Modal abierto={!!renovando} titulo={`Renovar membresía · ${renovando?.nombre ?? ""}`} onClose={() => setRenovando(null)}>
+        <form onSubmit={renovar}>
+          <SelectCampo
+            label="Plan"
+            value={renovacion.plan}
+            onChange={(e) => setRenovacion((r) => ({ ...r, plan: e.target.value }))}
+          >
+            {planes.map((p) => (
+              <option key={p.nombre} value={p.nombre} className="bg-[#111111] text-[#EEEEF3]">
+                {p.nombre} · ${p.precio}
+              </option>
+            ))}
+          </SelectCampo>
+          <SelectCampo
+            label="Método de pago"
+            value={renovacion.metodo}
+            onChange={(e) => setRenovacion((r) => ({ ...r, metodo: e.target.value }))}
+          >
+            {METODOS.map((m) => (
+              <option key={m} value={m} className="bg-[#111111] text-[#EEEEF3]">{m}</option>
+            ))}
+          </SelectCampo>
+          {renovacion.metodo === "Transferencia" && (
+            <p className="text-xs text-[#D4B24C] mb-3">La transferencia queda pendiente hasta que el Encargado la confirme.</p>
+          )}
+          {errorGeneral && <p className="text-sm text-[#E8706F] mb-3">{errorGeneral}</p>}
+          <Boton type="submit" className="w-full mt-2" disabled={guardando}>
+            {guardando ? "Renovando..." : "Renovar"}
+          </Boton>
+        </form>
+      </Modal>
 
       <Modal
         abierto={modalAbierto}
@@ -208,28 +323,49 @@ export default function Clientes() {
           <Input label="Correo" type="email" value={form.correo} onChange={cambiar("correo")} />
           <Err msg={errores.correo} />
 
-          {/* Plan con la paleta: campo #111111, borde #93834C, foco dorado #AC933D */}
-          <div className="mb-3">
-            <label className="block text-sm text-[#E3E3EC] mb-1">Plan</label>
-            <select
-              value={form.plan}
-              onChange={cambiar("plan")}
-              className={`w-full ${campo} ${form.plan ? "text-[#EEEEF3]" : "text-[#E3E3EC]/60"}`}
-            >
-              <option value="" disabled className="bg-[#111111] text-[#E3E3EC]/60">
-                Selecciona un plan
-              </option>
-              {planes.map((p) => (
-                <option key={p.value} value={p.value} className="bg-[#111111] text-[#EEEEF3]">
-                  {p.label}
+          {/* Plan y pago solo al dar de alta; despues se cambia con "Renovar" */}
+          {!editandoId && (
+            <>
+              <SelectCampo label="Plan" value={form.plan} onChange={cambiar("plan")}>
+                <option value="" disabled className="bg-[#111111] text-[#E3E3EC]/60">
+                  Selecciona un plan
                 </option>
-              ))}
-            </select>
-          </div>
-          <Err msg={errores.plan} />
+                {planes.map((p) => (
+                  <option key={p.nombre} value={p.nombre} className="bg-[#111111] text-[#EEEEF3]">
+                    {p.nombre} · ${p.precio}
+                  </option>
+                ))}
+              </SelectCampo>
+              <Err msg={errores.plan} />
 
-          <Boton type="submit" className="w-full mt-2">
-            {editandoId ? "Guardar cambios" : "Guardar cliente"}
+              <SelectCampo label="Método de pago" value={form.metodo} onChange={cambiar("metodo")}>
+                {METODOS.map((m) => (
+                  <option key={m} value={m} className="bg-[#111111] text-[#EEEEF3]">{m}</option>
+                ))}
+              </SelectCampo>
+            </>
+          )}
+
+          <Input
+            label="Contacto de emergencia"
+            value={form.contactoNombre}
+            onChange={cambiar("contactoNombre", limpiarLetras)}
+          />
+          <Err msg={errores.contactoNombre} />
+
+          <Input
+            label="Teléfono del contacto"
+            value={form.contactoTelefono}
+            inputMode="numeric"
+            maxLength={10}
+            onChange={cambiar("contactoTelefono", limpiarTelefono)}
+          />
+          <Err msg={errores.contactoTelefono} />
+
+          {errorGeneral && <p className="text-sm text-[#E8706F] mb-3">{errorGeneral}</p>}
+
+          <Boton type="submit" className="w-full mt-2" disabled={guardando}>
+            {guardando ? "Guardando..." : editandoId ? "Guardar cambios" : "Guardar cliente"}
           </Boton>
         </form>
       </Modal>

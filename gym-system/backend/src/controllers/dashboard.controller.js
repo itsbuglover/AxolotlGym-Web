@@ -1,54 +1,50 @@
-import { clientes, entradas, gastos, servicios, asesorias } from "../data/db.js";
+import { supabase, revisar } from "../data/supabase.js";
 
-export function resumenDashboard(req, res) {
-  const activos = clientes.filter((c) => c.estado === "activo").length;
-  const inactivos = clientes.filter((c) => c.estado === "inactivo").length;
+const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+const DIAS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]; // isodow 1..7
 
-  const mesActual = new Date().toISOString().slice(0, 7);
-  const ingresosServicios = 0; // conecta con tus pagos/renovaciones reales
-  const ingresosAsesorias = asesorias
-    .filter((a) => a.fechaSolicitud.startsWith(mesActual))
-    .reduce((sum, a) => sum + (a.costo || 0), 0);
-  const gastosDelMes = gastos
-    .filter((g) => g.fecha.startsWith(mesActual))
-    .reduce((sum, g) => sum + g.monto, 0);
-  const ingresosMes = ingresosServicios + ingresosAsesorias - gastosDelMes;
-
+// Vista resumen_dashboard: clientes activos/inactivos e ingresos netos del mes (pagos aceptados - reembolsos)
+export async function resumenDashboard(req, res) {
+  const [r] = revisar(await supabase.from("resumen_dashboard").select("*"));
   res.json({
     ok: true,
     resumen: {
-      clientesActivos: activos,
-      clientesInactivos: inactivos,
-      ingresosMes,
+      clientesActivos: r?.activos ?? 0,
+      clientesInactivos: r?.inactivos ?? 0,
+      ingresosMes: Number(r?.ingresos_mes) || 0,
     },
   });
 }
 
-// Ocupacion por hora (usado en home de recepcion/cliente y dashboard de dueño)
-export function ocupacionPorHora(req, res) {
-  const conteoPorHora = {};
-  entradas.forEach((e) => {
-    conteoPorHora[e.hora] = (conteoPorHora[e.hora] || 0) + 1;
+// Vista ocupacion_por_hora (entradas de hoy). Se rellenan con 0 las horas sin entradas (06:00 - 23:00).
+export async function ocupacionPorHora(req, res) {
+  const filas = revisar(await supabase.from("ocupacion_por_hora").select("*"));
+  const porHora = Object.fromEntries(filas.map((f) => [f.hora, f.personas]));
+  const ocupacion = Array.from({ length: 18 }, (_, i) => {
+    const hora = `${String(i + 6).padStart(2, "0")}:00`;
+    return { hora, personas: porHora[hora] || 0 };
   });
-  const horas = Array.from({ length: 15 }, (_, i) => i + 6); // 6am - 8pm, ajusta a tu horario real
-  const data = horas.map((h) => ({ hora: `${h}:00`, personas: conteoPorHora[h] || 0 }));
-  res.json({ ok: true, ocupacion: data });
+  res.json({ ok: true, ocupacion });
 }
 
-// Clientes activos/inactivos por mes (12 meses) - datos de ejemplo
-export function clientesPorMes(req, res) {
-  const meses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-  const data = meses.map((m) => ({
-    mes: m,
-    activos: Math.floor(Math.random() * 40) + 20, // TODO: sustituir por conteo real historico
-    inactivos: Math.floor(Math.random() * 15) + 5,
+// Vista clientes_por_mes: ultimos 12 meses ("2026-09" -> "Sep")
+export async function clientesPorMes(req, res) {
+  const filas = revisar(await supabase.from("clientes_por_mes").select("*").order("periodo"));
+  const data = filas.map((f) => ({
+    mes: MESES[Number(f.periodo.slice(5, 7)) - 1],
+    periodo: f.periodo,
+    activos: f.activos,
+    inactivos: f.inactivos,
   }));
   res.json({ ok: true, data });
 }
 
-// Entradas por dia de la semana - datos de ejemplo
-export function entradasPorDia(req, res) {
-  const dias = ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"];
-  const data = dias.map((d) => ({ dia: d, entradas: Math.floor(Math.random() * 60) + 10 }));
+// Vista afluencia_semanal: promedio de entradas por dia/hora de los ultimos 28 dias.
+// Se suman las horas de cada dia para obtener el promedio de entradas por dia de la semana.
+export async function entradasPorDia(req, res) {
+  const filas = revisar(await supabase.from("afluencia_semanal").select("*"));
+  const totales = [0, 0, 0, 0, 0, 0, 0];
+  filas.forEach((f) => (totales[f.dia_semana - 1] += Number(f.promedio) || 0));
+  const data = DIAS.map((dia, i) => ({ dia, entradas: Math.round(totales[i] * 10) / 10 }));
   res.json({ ok: true, data });
 }

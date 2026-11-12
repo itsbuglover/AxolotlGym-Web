@@ -16,15 +16,17 @@ export default function Solicitudes() {
     setSolicitudes(data.solicitudes);
   }
 
-  async function aprobar(id) {
-    await api.put(`/solicitudes/${id}/aprobar`);
+  // La base valida que siga pendiente y que el instructor tenga cupo
+  async function resolver(id, accion) {
+    try {
+      await api.put(`/solicitudes/${id}/${accion}`);
+    } catch (err) {
+      window.alert(err.response?.data?.mensaje || "No se pudo actualizar la solicitud");
+    }
     cargar();
   }
-
-  async function rechazar(id) {
-    await api.put(`/solicitudes/${id}/rechazar`);
-    cargar();
-  }
+  const aprobar = (id) => resolver(id, "aprobar");
+  const rechazar = (id) => resolver(id, "rechazar");
 
   const columnas = [
     { key: "clienteNombre", label: "Cliente" },

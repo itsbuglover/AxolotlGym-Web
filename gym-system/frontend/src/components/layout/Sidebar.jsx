@@ -3,7 +3,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 
 const menuPorRol = {
   recepcion: [
-    { to: "/recepcion", label: "Escanear QR", fin: true },
+    { to: "/recepcion", label: "Acceso facial", fin: true },
     { to: "/recepcion/clientes", label: "Clientes" },
     { to: "/recepcion/solicitudes", label: "Solicitudes" },
   ],

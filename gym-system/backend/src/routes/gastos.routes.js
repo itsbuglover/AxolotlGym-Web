@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { asyncH } from "../data/supabase.js";
 import { verificarToken, permitirRoles } from "../middleware/auth.js";
 import {
   listarGastos, crearGasto, actualizarGasto, eliminarGasto,
@@ -6,8 +7,8 @@ import {
 
 const router = Router();
 router.use(verificarToken, permitirRoles("encargado", "dueno"));
-router.get("/", listarGastos);
-router.post("/", crearGasto);
-router.put("/:id", actualizarGasto);
-router.delete("/:id", eliminarGasto);
+router.get("/", asyncH(listarGastos));
+router.post("/", asyncH(crearGasto));
+router.put("/:id", asyncH(actualizarGasto));
+router.delete("/:id", asyncH(eliminarGasto));
 export default router;

@@ -14,3 +14,7 @@ dist/
 Thumbs.db
 .vscode/
 *.log
+
+# WASM copiado por frontend/scripts/copiar-wasm.mjs
+gym-system/frontend/public/tflite/
+gym-system/frontend/public/mediapipe/

@@ -1,12 +1,12 @@
 # Gym System — Scaffold (Recepcion + Encargado/Dueño)
 
-Este es un **framework base** con backend (Node.js/Express) y frontend web (React + Tailwind)
-que cubre las vistas de **Recepcion** y **Encargado/Dueño** que describiste. Los datos vienen de
-un arreglo en memoria (`backend/src/data/db.js`) para que todo funcione desde el primer momento;
-tu conectas tu base de datos real después y le das el diseño final.
+Backend (Node.js/Express) y frontend web (React + Tailwind) para **Recepción** y **Encargado**.
+La web usa **la misma base de datos de Supabase que la app Android**: las mismas vistas
+(`clientes_lista`, `personal_lista`, `solicitudes_lista`, `reporte_mensual`, ...) y las mismas
+funciones (`login_auto`, `crear_cliente`, `renovar_membresia`, `crear_personal`, ...).
+Lo que se haga en la web se ve en la app y al revés.
 
-Las vistas de **Clientes** e **Instructores** las harás en Android Studio / Kotlin y consumirán
-la misma API (ya deje las rutas `login-cliente`, `asesorias`, etc. listas para eso).
+El frontend nunca habla con Supabase directo: la llave vive solo en `backend/.env`.
 
 ## Estructura
 
@@ -21,9 +21,9 @@ gym-system/
 ### 1. Backend
 ```bash
 cd backend
-cp .env.example .env
+cp .env.example .env   # pon SUPABASE_URL y SUPABASE_KEY (los mismos de local.properties de la app)
 npm install
-npm run dev        # http://localhost:4000
+npm run dev            # http://localhost:4000
 ```
 
 ### 2. Frontend
@@ -31,21 +31,28 @@ npm run dev        # http://localhost:4000
 cd frontend
 cp .env.example .env
 npm install
-npm run dev        # http://localhost:5173
+npm run dev            # http://localhost:5173
 ```
 
-### Usuarios de prueba (ya vienen en db.js)
-| Rol       | Correo             | Contraseña |
-|-----------|---------------------|-----------|
-| Dueño     | duena@gym.com       | 123456    |
-| Recepcion | recepcion@gym.com   | 123456    |
+### Acceso
+Entra con un usuario real de la base con rol **RECEPCION** o **ENCARGADO** (los mismos de la app).
+Clientes e instructores reciben un aviso para usar la app móvil.
+
+- Clientes y personal nuevos se crean con la contraseña temporal `Axolotl2026`
+  (al personal se le cambia por la que escriba el Encargado en el formulario).
+- Las contraseñas deben tener 8+ caracteres, mayúscula, minúscula, número y símbolo.
+
+### Producción (Vercel)
+El frontend en Vercel necesita `VITE_API_URL` apuntando al backend publicado
+(por ejemplo en Render o Railway) con sus variables `SUPABASE_URL`, `SUPABASE_KEY` y `JWT_SECRET`.
 
 ## Que ya esta cubierto
 
 **Login** (`/login`) — correo y contraseña, redirige segun el rol.
 
 **Recepcion**
-- `/recepcion` — vista principal para escanear QR + grafica de ocupacion por hora (el lector de QR es un placeholder, ahí conectas tu libreria, ej. `html5-qrcode`).
+- `/recepcion` — **acceso con reconocimiento facial**, igual que la app: el cliente mira a la cámara y se registra
+  su entrada o salida automáticamente (`acceso_por_rostro`). Muestra cuántas personas hay dentro.
 - `/recepcion/clientes` — tabla con buscador, filtro por estado, boton renovar y formulario para nuevo cliente.
 - `/recepcion/solicitudes` — tabla de solicitudes de asesoria con badge de pendientes y botones aprobar/rechazar.
 
@@ -56,15 +63,26 @@ npm run dev        # http://localhost:5173
 - `/encargado/gastos` — tabla con concepto, categoria, monto, fecha + formulario para agregar/editar.
 - `/encargado/reportes` — tabla mensual (periodo, servicio, asesorias, gastos, total).
 
-## Lo que falta que tú conectes/ajustes
+## Reconocimiento facial en la web
 
-- **Base de datos real**: sustituye `backend/src/data/db.js` por tus modelos/queries (MySQL, Postgres, Mongo, Firebase...). Mantén la misma forma de los objetos para no romper el frontend.
-- **Hash de contraseñas**: ya esta `bcryptjs` en las dependencias, falta usarlo al crear/verificar usuarios (ahorita las contraseñas estan en texto plano solo para que el scaffold funcione rapido).
-- **Lector de QR real** en `EscanearQR.jsx` (recepcion) y en el home del cliente (Android).
-- **Foto de perfil de instructores** (subida de imagenes) — falta el manejo de archivos (ej. `multer` + storage).
-- **Renovación real de membresías** (ahorita solo marca `activo` y reinicia la fecha, sin logica de vencimiento/pago).
-- **Edición** de clientes/usuarios/servicios/gastos: los botones "Editar" están de placeholder, solo falta reutilizar el mismo `Modal` + `PUT` que ya usa "Nuevo".
-- Diseño final (colores, tipografia, layout) — el archivo `tailwind.config.js` tiene una paleta simple lista para que la reemplaces.
+Funciona igual que la app y con los mismos rostros registrados:
+
+- Modelo: el mismo `mobilefacenet.tflite` de la app (en `frontend/public/models/`), corriendo en el
+  navegador con TensorFlow.js. Detección de rostro con MediaPipe (`blaze_face_short_range.tflite`).
+- Mismo proceso que `CapturaFacial.kt`: rostro más cercano, una sola persona, 3 muestras consistentes,
+  recorte a 112×112. Solo viaja el vector de 192 números, nunca la foto.
+- La app recorta con ML Kit y la web con MediaPipe; como MobileFaceNet es sensible al recorte, la web
+  calcula 3 recortes (`RECORTES` en `frontend/src/facial/reconocedor.js`) y los prueba en orden hasta
+  que uno coincide (un `NO_RECONOCIDO` no registra nada). El que funcionó se prueba primero la próxima vez.
+  Si un cliente no es reconocido, la consola del navegador muestra la mejor similitud obtenida.
+- Necesita HTTPS (o `localhost`) para que el navegador permita usar la cámara.
+- Los archivos WebAssembly se copian solos a `public/` antes de `npm run dev` / `npm run build`.
+
+## Pendiente
+
+- Confirmar pagos por transferencia y cancelar membresías/asesorías desde la web
+  (ya existen en la base: `confirmar_pago`, `cancelar_membresia`, `cancelar_asesoria`).
+- Registrar el rostro de un cliente desde la web (por ahora se registra en la app, en Clientes).
 
 ## Endpoints principales
 
@@ -76,7 +94,7 @@ GET    /api/clientes
 POST   /api/clientes
 PUT    /api/clientes/:id
 PUT    /api/clientes/:id/renovar
-DELETE /api/clientes/:id
+GET    /api/clientes/planes
 
 GET    /api/solicitudes
 PUT    /api/solicitudes/:id/aprobar
@@ -101,5 +119,7 @@ POST   /api/asesorias/solicitar         (cliente)
 GET    /api/asesorias/mis-clientes      (instructor)
 PUT    /api/asesorias/:id               (instructor)
 
-POST   /api/qr/registrar                (recepcion/instructor)
+POST   /api/acceso/rostro           (vector de 192 números -> ENTRADA/SALIDA/DENEGADO/NO_RECONOCIDO...)
+GET    /api/acceso/ocupacion        (personas dentro)
+GET    /api/acceso/foto/:id         (foto del cliente)
 ```
