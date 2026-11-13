@@ -38,14 +38,10 @@ const Err = ({ msg }) =>
 
 const formVacio = { nombre: "", apellido: "", telefono: "", correo: "", plan: "" };
 
-const planes = [
-  { value: "trimestral", label: "Trimestral" },
-  { value: "mensual", label: "Mensual" },
-  { value: "visita", label: "Visita" },
-];
-
 export default function Clientes() {
   const [clientes, setClientes] = useState([]);
+  const [planes, setPlanes] = useState([]); // vienen de tipos_membresia en Supabase
+  const [aviso, setAviso] = useState("");
   const [buscar, setBuscar] = useState("");
   const [estado, setEstado] = useState("");
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -56,6 +52,17 @@ export default function Clientes() {
   useEffect(() => {
     cargar();
   }, [buscar, estado]);
+
+  useEffect(() => {
+    api
+      .get("/clientes/planes")
+      .then(({ data }) =>
+        setPlanes(
+          data.planes.map((p) => ({ value: p.nombre.toLowerCase(), label: `${p.nombre} · $${p.precio}` }))
+        )
+      )
+      .catch(() => setPlanes([]));
+  }, []);
 
   async function cargar() {
     const { data } = await api.get("/clientes", { params: { buscar, estado } });
@@ -116,10 +123,17 @@ export default function Clientes() {
       correo: form.correo.trim(),
     };
 
-    if (editandoId) {
-      await api.put(`/clientes/${editandoId}`, datos);
-    } else {
-      await api.post("/clientes", datos);
+    try {
+      if (editandoId) {
+        await api.put(`/clientes/${editandoId}`, datos);
+        setAviso("");
+      } else {
+        const { data } = await api.post("/clientes", datos);
+        setAviso(data.mensaje || "");
+      }
+    } catch (err) {
+      setErrores((er) => ({ ...er, general: err.response?.data?.mensaje || "No se pudo guardar" }));
+      return;
     }
 
     cerrarModal();
@@ -127,7 +141,12 @@ export default function Clientes() {
   }
 
   async function renovar(id) {
-    await api.put(`/clientes/${id}/renovar`);
+    try {
+      const { data } = await api.put(`/clientes/${id}/renovar`);
+      setAviso(data.mensaje || "Membresia renovada");
+    } catch (err) {
+      setAviso(err.response?.data?.mensaje || "No se pudo renovar");
+    }
     cargar();
   }
 
@@ -182,6 +201,8 @@ export default function Clientes() {
         </select>
       </div>
 
+      {aviso && <p className="text-sm text-[#D4B24C] mb-3">{aviso}</p>}
+
       <Table columnas={columnas} filas={clientes} />
 
       <Modal
@@ -227,6 +248,7 @@ export default function Clientes() {
             </select>
           </div>
           <Err msg={errores.plan} />
+          <Err msg={errores.general} />
 
           <Boton type="submit" className="w-full mt-2">
             {editandoId ? "Guardar cambios" : "Guardar cliente"}

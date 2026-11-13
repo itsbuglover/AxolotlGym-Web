@@ -13,7 +13,7 @@ import Solicitudes from "../pages/recepcion/Solicitudes.jsx";
 
 // Encargado / Dueño
 import Dashboard from "../pages/encargado/Dashboard.jsx";
-import Usuarios from "../pages/encargado/Usuarios.jsx";
+import Personal from "../pages/encargado/Personal.jsx"; // recepcion, instructores, encargados
 import Servicios from "../pages/encargado/Servicios.jsx";
 import Gastos from "../pages/encargado/Gastos.jsx";
 import Reportes from "../pages/encargado/Reportes.jsx";
@@ -75,10 +75,10 @@ export default function AppRoutes() {
       />
 
       <Route
-        path="/encargado/usuarios"
+        path="/encargado/personal"
         element={
           <RutaProtegida rolesPermitidos={["encargado", "dueno"]}>
-            <Usuarios />
+            <Personal />
           </RutaProtegida>
         }
       />

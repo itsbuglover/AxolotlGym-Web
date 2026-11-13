@@ -34,11 +34,15 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-### Usuarios de prueba (ya vienen en db.js)
-| Rol       | Correo             | Contraseña |
-|-----------|---------------------|-----------|
-| Dueño     | duena@gym.com       | 123456    |
-| Recepcion | recepcion@gym.com   | 123456    |
+### Cuentas para entrar
+La web usa la misma base de Supabase que la app Android: se entra con las cuentas reales de **recepción** o **encargado**. El backend necesita `SUPABASE_URL` y `SUPABASE_KEY` en su `.env` (ver `backend/.env.example`).
+
+### Vocabulario (para no confundir)
+| Término | Quiénes son | Dónde se administran |
+|---------|-------------|----------------------|
+| **Clientes** | Personas con membresía del gimnasio | `/recepcion/clientes` y `/encargado/clientes` · API `/api/clientes` |
+| **Personal** | Recepción, instructores y encargados | `/encargado/personal` · API `/api/personal` |
+| `usuario` (en el código) | Quien inició sesión en la web (token JWT, `useAuth()`) | `AuthContext.jsx`, `middleware/auth.js` |
 
 ## Que ya esta cubierto
 
@@ -51,19 +55,18 @@ npm run dev        # http://localhost:5173
 
 **Encargado / Dueño** (mismo rol de vistas, roles `encargado` y `dueno`)
 - `/encargado` — dashboard con tarjetas (clientes activos/inactivos, ingresos del mes), grafica de ocupacion por hora, grafica de clientes activos/inactivos por los 12 meses, y grafica de entradas por dia de la semana.
-- `/encargado/usuarios` — tabla de usuarios (nombre, rol, correo, estado, editar/eliminar) + formulario para crear usuario, que despliega campos extra (costo, capacidad maxima) cuando el rol es instructor.
+- `/encargado/personal` — tabla del personal (recepción, instructores, encargados: nombre, rol, correo, estado, editar/eliminar) + formulario para agregar personal, que despliega campos extra (costo, capacidad maxima) cuando el rol es instructor.
 - `/encargado/servicios` — tabla con nombre, duracion, precio + formulario para agregar/editar.
 - `/encargado/gastos` — tabla con concepto, categoria, monto, fecha + formulario para agregar/editar.
 - `/encargado/reportes` — tabla mensual (periodo, servicio, asesorias, gastos, total).
 
 ## Lo que falta que tú conectes/ajustes
 
-- **Base de datos real**: sustituye `backend/src/data/db.js` por tus modelos/queries (MySQL, Postgres, Mongo, Firebase...). Mantén la misma forma de los objetos para no romper el frontend.
-- **Hash de contraseñas**: ya esta `bcryptjs` en las dependencias, falta usarlo al crear/verificar usuarios (ahorita las contraseñas estan en texto plano solo para que el scaffold funcione rapido).
+- **Base de datos**: ya conectada a Supabase (`backend/src/data/supabase.js`). Las contraseñas las hashea la propia base.
 - **Lector de QR real** en `EscanearQR.jsx` (recepcion) y en el home del cliente (Android).
 - **Foto de perfil de instructores** (subida de imagenes) — falta el manejo de archivos (ej. `multer` + storage).
 - **Renovación real de membresías** (ahorita solo marca `activo` y reinicia la fecha, sin logica de vencimiento/pago).
-- **Edición** de clientes/usuarios/servicios/gastos: los botones "Editar" están de placeholder, solo falta reutilizar el mismo `Modal` + `PUT` que ya usa "Nuevo".
+- **Edición** de clientes/personal/servicios/gastos: los botones "Editar" están de placeholder, solo falta reutilizar el mismo `Modal` + `PUT` que ya usa "Nuevo".
 - Diseño final (colores, tipografia, layout) — el archivo `tailwind.config.js` tiene una paleta simple lista para que la reemplaces.
 
 ## Endpoints principales
@@ -73,6 +76,7 @@ POST   /api/auth/login              (staff: recepcion/instructor/encargado/dueno
 POST   /api/auth/login-cliente      (app Android)
 
 GET    /api/clientes
+GET    /api/clientes/planes         (tipos de membresia)
 POST   /api/clientes
 PUT    /api/clientes/:id
 PUT    /api/clientes/:id/renovar
@@ -82,10 +86,10 @@ GET    /api/solicitudes
 PUT    /api/solicitudes/:id/aprobar
 PUT    /api/solicitudes/:id/rechazar
 
-GET    /api/usuarios
-POST   /api/usuarios
-PUT    /api/usuarios/:id
-DELETE /api/usuarios/:id
+GET    /api/personal                (recepcion, instructores, encargados)
+POST   /api/personal
+PUT    /api/personal/:id
+DELETE /api/personal/:id
 
 GET    /api/servicios | POST | PUT/:id | DELETE/:id
 GET    /api/gastos    | POST | PUT/:id | DELETE/:id

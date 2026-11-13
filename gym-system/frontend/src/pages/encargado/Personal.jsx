@@ -77,8 +77,10 @@ function SelectPaleta({ label, value, onChange, options }) {
 
 const vacio = { nombre: "", telefono: "", correo: "", password: "", rol: "recepcion", estado: "activo", costoServicio: "", capacidadMaxima: "" };
 
-export default function Usuarios() {
-  const [usuarios, setUsuarios] = useState([]);
+// PERSONAL del gimnasio: recepcion, instructores y encargados (los clientes van en Clientes)
+export default function Personal() {
+  const [personal, setPersonal] = useState([]);
+  const [aviso, setAviso] = useState("");
   const [modalAbierto, setModalAbierto] = useState(false);
   const [editandoId, setEditandoId] = useState(null); // null = creando, id = editando
   const [form, setForm] = useState(vacio);
@@ -89,8 +91,8 @@ export default function Usuarios() {
   }, []);
 
   async function cargar() {
-    const { data } = await api.get("/usuarios");
-    setUsuarios(data.usuarios);
+    const { data } = await api.get("/personal");
+    setPersonal(data.personal);
   }
 
   // Actualiza un campo (limpiando lo inválido) y quita su error
@@ -107,17 +109,17 @@ export default function Usuarios() {
     setModalAbierto(true);
   }
 
-  function abrirEditar(usuario) {
-    setEditandoId(usuario.id);
+  function abrirEditar(empleado) {
+    setEditandoId(empleado.id);
     setForm({
-      nombre: usuario.nombre ?? "",
-      telefono: usuario.telefono ?? "",
-      correo: usuario.correo ?? "",
+      nombre: empleado.nombre ?? "",
+      telefono: empleado.telefono ?? "",
+      correo: empleado.correo ?? "",
       password: "",
-      rol: usuario.rol ?? "recepcion",
-      estado: usuario.estado ?? "activo",
-      costoServicio: usuario.costoServicio ?? "",
-      capacidadMaxima: usuario.capacidadMaxima ?? "",
+      rol: empleado.rol ?? "recepcion",
+      estado: empleado.estado ?? "activo",
+      costoServicio: empleado.costoServicio ?? "",
+      capacidadMaxima: empleado.capacidadMaxima ?? "",
     });
     setErrores({});
     setModalAbierto(true);
@@ -151,12 +153,19 @@ export default function Usuarios() {
       correo: form.correo.trim(),
     };
 
-    if (editandoId) {
-      // al editar no se manda contraseña
-      const { password, ...sinPassword } = datos;
-      await api.put(`/usuarios/${editandoId}`, sinPassword);
-    } else {
-      await api.post("/usuarios", datos);
+    try {
+      if (editandoId) {
+        // al editar no se manda contraseña
+        const { password, ...sinPassword } = datos;
+        await api.put(`/personal/${editandoId}`, sinPassword);
+        setAviso("");
+      } else {
+        const { data } = await api.post("/personal", datos);
+        setAviso(data.mensaje || "");
+      }
+    } catch (err) {
+      setErrores((er) => ({ ...er, general: err.response?.data?.mensaje || "No se pudo guardar" }));
+      return;
     }
 
     cerrarModal();
@@ -164,7 +173,12 @@ export default function Usuarios() {
   }
 
   async function eliminar(id) {
-    await api.delete(`/usuarios/${id}`);
+    try {
+      const { data } = await api.delete(`/personal/${id}`);
+      setAviso(data.mensaje || "");
+    } catch (err) {
+      setAviso(err.response?.data?.mensaje || "No se pudo eliminar");
+    }
     cargar();
   }
 
@@ -188,15 +202,17 @@ export default function Usuarios() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-[#EEEEF3] mb-6">Usuarios</h1>
-        <Boton onClick={abrirNuevo}>+ Nuevo usuario</Boton>
+        <h1 className="text-xl font-semibold text-[#EEEEF3] mb-6">Personal</h1>
+        <Boton onClick={abrirNuevo}>+ Agregar personal</Boton>
       </div>
 
-      <Table columnas={columnas} filas={usuarios} />
+      {aviso && <p className="text-sm text-[#D4B24C] mb-3">{aviso}</p>}
+
+      <Table columnas={columnas} filas={personal} />
 
       <Modal
         abierto={modalAbierto}
-        titulo={editandoId ? "Editar usuario" : "Nuevo usuario"}
+        titulo={editandoId ? "Editar personal" : "Agregar personal"}
         onClose={cerrarModal}
       >
         <form onSubmit={guardar} noValidate>
@@ -212,12 +228,12 @@ export default function Usuarios() {
           />
           <Err msg={errores.telefono} />
 
-          <Input label="Correo (se le asignara al usuario)" type="email" value={form.correo} onChange={cambiar("correo")} />
+          <Input label="Correo (con el que inicia sesion)" type="email" value={form.correo} onChange={cambiar("correo")} />
           <Err msg={errores.correo} />
 
           {!editandoId && (
             <>
-              <Input label="Contraseña (se le asignara al usuario)" value={form.password} onChange={cambiar("password")} />
+              <Input label="Contraseña inicial" value={form.password} onChange={cambiar("password")} />
               <Err msg={errores.password} />
             </>
           )}
@@ -261,8 +277,10 @@ export default function Usuarios() {
             </>
           )}
 
+          <Err msg={errores.general} />
+
           <Boton type="submit" className="w-full mt-2">
-            {editandoId ? "Guardar cambios" : "Guardar usuario"}
+            {editandoId ? "Guardar cambios" : "Agregar al personal"}
           </Boton>
         </form>
       </Modal>

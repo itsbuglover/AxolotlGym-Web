@@ -1,29 +1,33 @@
-import { gastos, siguienteId } from "../data/db.js";
+import { supabase, consulta, manejar, errorHttp, numero } from "../data/supabase.js";
 
-export function listarGastos(req, res) {
-  res.json({ ok: true, gastos });
-}
+const tabla = () => supabase.from("gastos");
+const aGasto = (g) => ({ ...g, monto: numero(g.monto) });
 
-export function crearGasto(req, res) {
-  const { concepto, categoria, monto, fecha } = req.body;
-  if (!concepto || !categoria || monto == null || !fecha) {
-    return res.status(400).json({ ok: false, mensaje: "concepto, categoria, monto y fecha son obligatorios" });
+function validar({ concepto, categoria, monto, fecha }) {
+  if (!concepto || !categoria || monto == null || monto === "" || !fecha) {
+    throw errorHttp(400, "concepto, categoria, monto y fecha son obligatorios");
   }
-  const nuevo = { id: siguienteId(gastos), concepto, categoria, monto, fecha };
-  gastos.push(nuevo);
-  res.status(201).json({ ok: true, gasto: nuevo });
+  return { concepto, categoria, monto: Number(monto), fecha };
 }
 
-export function actualizarGasto(req, res) {
-  const gasto = gastos.find((g) => g.id === Number(req.params.id));
-  if (!gasto) return res.status(404).json({ ok: false, mensaje: "Gasto no encontrado" });
-  Object.assign(gasto, req.body);
-  res.json({ ok: true, gasto });
-}
+export const listarGastos = manejar(async (req, res) => {
+  const gastos = await consulta(tabla().select("*").order("fecha", { ascending: false }));
+  res.json({ ok: true, gastos: gastos.map(aGasto) });
+});
 
-export function eliminarGasto(req, res) {
-  const idx = gastos.findIndex((g) => g.id === Number(req.params.id));
-  if (idx === -1) return res.status(404).json({ ok: false, mensaje: "Gasto no encontrado" });
-  gastos.splice(idx, 1);
+export const crearGasto = manejar(async (req, res) => {
+  const [gasto] = await consulta(tabla().insert(validar(req.body)).select());
+  res.status(201).json({ ok: true, gasto: aGasto(gasto) });
+});
+
+export const actualizarGasto = manejar(async (req, res) => {
+  const filas = await consulta(tabla().update(validar(req.body)).eq("id", Number(req.params.id)).select());
+  if (!filas.length) throw errorHttp(404, "Gasto no encontrado");
+  res.json({ ok: true, gasto: aGasto(filas[0]) });
+});
+
+export const eliminarGasto = manejar(async (req, res) => {
+  const filas = await consulta(tabla().delete().eq("id", Number(req.params.id)).select());
+  if (!filas.length) throw errorHttp(404, "Gasto no encontrado");
   res.json({ ok: true, mensaje: "Gasto eliminado" });
-}
+});

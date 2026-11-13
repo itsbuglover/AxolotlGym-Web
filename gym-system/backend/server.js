@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 import authRoutes from "./src/routes/auth.routes.js";
 import clientesRoutes from "./src/routes/clientes.routes.js";
 import solicitudesRoutes from "./src/routes/solicitudes.routes.js";
-import usuariosRoutes from "./src/routes/usuarios.routes.js";
+import personalRoutes from "./src/routes/personal.routes.js";
 import serviciosRoutes from "./src/routes/servicios.routes.js";
 import gastosRoutes from "./src/routes/gastos.routes.js";
 import reportesRoutes from "./src/routes/reportes.routes.js";
@@ -22,7 +22,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/clientes", clientesRoutes);
 app.use("/api/solicitudes", solicitudesRoutes);
-app.use("/api/usuarios", usuariosRoutes);
+app.use("/api/personal", personalRoutes); // recepcion, instructores, encargados (no clientes)
 app.use("/api/servicios", serviciosRoutes);
 app.use("/api/gastos", gastosRoutes);
 app.use("/api/reportes", reportesRoutes);

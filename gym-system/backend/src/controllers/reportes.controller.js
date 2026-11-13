@@ -1,28 +1,15 @@
-import { asesorias, gastos } from "../data/db.js";
+import { supabase, consulta, manejar, numero } from "../data/supabase.js";
 
-// Reporte mensual: periodo (mes/año), servicio, asesorias, gastos, total
-// Esto es un CALCULO DE EJEMPLO sobre datos mock; sustituye por tus queries reales agrupando por mes.
-export function listarReportes(req, res) {
-  const meses = {};
-
-  gastos.forEach((g) => {
-    const periodo = g.fecha.slice(0, 7); // "YYYY-MM"
-    meses[periodo] = meses[periodo] || { periodo, servicio: 0, asesorias: 0, gastos: 0 };
-    meses[periodo].gastos += g.monto;
-  });
-
-  asesorias.forEach((a) => {
-    const periodo = a.fechaSolicitud.slice(0, 7);
-    meses[periodo] = meses[periodo] || { periodo, servicio: 0, asesorias: 0, gastos: 0 };
-    meses[periodo].asesorias += a.costo || 0;
-  });
-
-  const reportes = Object.values(meses)
-    .map((m) => ({
-      ...m,
-      total: m.servicio + m.asesorias - m.gastos,
-    }))
+// Reporte de los ultimos 6 meses (vista reporte_mensual, la misma de la app)
+export const listarReportes = manejar(async (req, res) => {
+  const filas = await consulta(supabase.from("reporte_mensual").select("*"));
+  const reportes = filas
+    .map((f) => {
+      const servicio = numero(f.servicios);
+      const asesorias = numero(f.asesorias);
+      const gastos = numero(f.gastos);
+      return { id: f.periodo, periodo: f.periodo, servicio, asesorias, gastos, total: servicio + asesorias - gastos };
+    })
     .sort((a, b) => (a.periodo < b.periodo ? 1 : -1));
-
   res.json({ ok: true, reportes });
-}
+});

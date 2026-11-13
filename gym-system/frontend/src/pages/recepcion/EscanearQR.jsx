@@ -92,7 +92,9 @@ export default function EscanearQR() {
     try {
       const { data } = await api.get("/clientes", { params: { buscar: codigo } });
       const encontrado = data.clientes.find(
-        (c) => String(c.numMembresia).toLowerCase() === codigo.toLowerCase()
+        (c) =>
+          String(c.numMembresia).toLowerCase() === codigo.toLowerCase() ||
+          String(c.codigoQr || "").toLowerCase() === codigo.toLowerCase()
       );
       if (!encontrado) {
         setCliente(null);

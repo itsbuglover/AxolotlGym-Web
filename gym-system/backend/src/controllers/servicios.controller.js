@@ -1,29 +1,33 @@
-import { servicios, siguienteId } from "../data/db.js";
+import { supabase, consulta, manejar, errorHttp, numero } from "../data/supabase.js";
 
-export function listarServicios(req, res) {
-  res.json({ ok: true, servicios });
-}
+const tabla = () => supabase.from("servicios");
+const aServicio = (s) => ({ ...s, precio: numero(s.precio) });
 
-export function crearServicio(req, res) {
-  const { nombre, duracion, precio } = req.body;
-  if (!nombre || !duracion || precio == null) {
-    return res.status(400).json({ ok: false, mensaje: "nombre, duracion y precio son obligatorios" });
+function validar({ nombre, duracion, precio }) {
+  if (!nombre || !duracion || precio == null || precio === "") {
+    throw errorHttp(400, "nombre, duracion y precio son obligatorios");
   }
-  const nuevo = { id: siguienteId(servicios), nombre, duracion, precio };
-  servicios.push(nuevo);
-  res.status(201).json({ ok: true, servicio: nuevo });
+  return { nombre, duracion: String(duracion), precio: Number(precio) };
 }
 
-export function actualizarServicio(req, res) {
-  const servicio = servicios.find((s) => s.id === Number(req.params.id));
-  if (!servicio) return res.status(404).json({ ok: false, mensaje: "Servicio no encontrado" });
-  Object.assign(servicio, req.body);
-  res.json({ ok: true, servicio });
-}
+export const listarServicios = manejar(async (req, res) => {
+  const servicios = await consulta(tabla().select("*").order("nombre"));
+  res.json({ ok: true, servicios: servicios.map(aServicio) });
+});
 
-export function eliminarServicio(req, res) {
-  const idx = servicios.findIndex((s) => s.id === Number(req.params.id));
-  if (idx === -1) return res.status(404).json({ ok: false, mensaje: "Servicio no encontrado" });
-  servicios.splice(idx, 1);
+export const crearServicio = manejar(async (req, res) => {
+  const [servicio] = await consulta(tabla().insert(validar(req.body)).select());
+  res.status(201).json({ ok: true, servicio: aServicio(servicio) });
+});
+
+export const actualizarServicio = manejar(async (req, res) => {
+  const filas = await consulta(tabla().update(validar(req.body)).eq("id", Number(req.params.id)).select());
+  if (!filas.length) throw errorHttp(404, "Servicio no encontrado");
+  res.json({ ok: true, servicio: aServicio(filas[0]) });
+});
+
+export const eliminarServicio = manejar(async (req, res) => {
+  const filas = await consulta(tabla().delete().eq("id", Number(req.params.id)).select());
+  if (!filas.length) throw errorHttp(404, "Servicio no encontrado");
   res.json({ ok: true, mensaje: "Servicio eliminado" });
-}
+});

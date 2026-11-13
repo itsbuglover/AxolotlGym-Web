@@ -10,7 +10,7 @@ const menuPorRol = {
   encargado: [
     { to: "/encargado", label: "Dashboard", fin: true },
     { to: "/encargado/clientes", label: "Clientes" },
-    { to: "/encargado/usuarios", label: "Usuarios" },
+    { to: "/encargado/personal", label: "Personal" },
     { to: "/encargado/servicios", label: "Servicios" },
     { to: "/encargado/gastos", label: "Gastos" },
     { to: "/encargado/reportes", label: "Reportes" },
@@ -18,7 +18,7 @@ const menuPorRol = {
   dueno: [
     { to: "/encargado", label: "Dashboard", fin: true },
     { to: "/encargado/clientes", label: "Clientes" },
-    { to: "/encargado/usuarios", label: "Usuarios" },
+    { to: "/encargado/personal", label: "Personal" },
     { to: "/encargado/servicios", label: "Servicios" },
     { to: "/encargado/gastos", label: "Gastos" },
     { to: "/encargado/reportes", label: "Reportes" },
