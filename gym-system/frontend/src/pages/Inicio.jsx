@@ -1,13 +1,5 @@
-
-import { useNavigate } from "react-router-dom";
-import AxolotlPromoCarousel from "../components/AxolotlPromoCarousel.jsx";
+import { Navigate } from "react-router-dom";
 
 export default function Inicio() {
-  const navigate = useNavigate();
-
-  return (
-    <AxolotlPromoCarousel
-      onLoginClick={() => navigate("/login")}
-    />
-  );
+  return <Navigate to="/login" replace />;
 }

@@ -4,8 +4,7 @@ import api from "../../api/api.js";
 import Badge from "../../components/ui/Badge.jsx";
 import Boton from "../../components/ui/Boton.jsx";
 
-// Paleta: fondo #222223 · tarjetas #3D3D3F · campos #111111 · dorado #AC933D · borde #93834C
-const tarjeta = "bg-[#3D3D3F] border border-[#93834C] rounded-lg p-6";
+const tarjeta = "bg-[var(--c-tarjeta)] border border-[var(--c-borde)] rounded-lg p-6";
 const ID_LECTOR = "lector-qr";
 
 // El QR de la app trae "AXOLOTL-GYM|ACCESO|M-1001": nos quedamos con el ultimo pedazo.
@@ -132,21 +131,21 @@ export default function EscanearQR() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-[#EEEEF3] mb-6">Escanear codigo QR</h1>
+      <h1 className="text-xl font-semibold text-[var(--c-texto)] mb-6">Escanear codigo QR</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* ---------- Camara ---------- */}
         <div className={tarjeta}>
-          <p className="text-sm font-medium text-[#EEEEF3] mb-4">Escanear codigo</p>
+          <p className="text-sm font-medium text-[var(--c-texto)] mb-4">Escanear codigo</p>
 
-          <div className="relative aspect-square rounded-lg overflow-hidden bg-[#111111] mb-4">
+          <div className="relative aspect-square rounded-lg overflow-hidden bg-[var(--c-campo)] mb-4">
             <div
               id={ID_LECTOR}
               className="absolute inset-0 [&_video]:!w-full [&_video]:!h-full [&_video]:!object-cover"
             />
 
             {estadoCamara !== "activa" && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center text-sm text-[#E3E3EC]/80">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center text-sm text-[var(--c-texto-tenue)]">
                 {estadoCamara === "iniciando" && <p>Abriendo camara...</p>}
                 {estadoCamara === "apagada" && (
                   <>
@@ -163,10 +162,10 @@ export default function EscanearQR() {
               </div>
             )}
 
-            <span className="pointer-events-none absolute top-3 left-3 w-9 h-9 border-t-4 border-l-4 border-[#AC933D] rounded-tl-lg" />
-            <span className="pointer-events-none absolute top-3 right-3 w-9 h-9 border-t-4 border-r-4 border-[#AC933D] rounded-tr-lg" />
-            <span className="pointer-events-none absolute bottom-3 left-3 w-9 h-9 border-b-4 border-l-4 border-[#AC933D] rounded-bl-lg" />
-            <span className="pointer-events-none absolute bottom-3 right-3 w-9 h-9 border-b-4 border-r-4 border-[#AC933D] rounded-br-lg" />
+            <span className="pointer-events-none absolute top-3 left-3 w-9 h-9 border-t-4 border-l-4 border-[var(--c-acento)] rounded-tl-lg" />
+            <span className="pointer-events-none absolute top-3 right-3 w-9 h-9 border-t-4 border-r-4 border-[var(--c-acento)] rounded-tr-lg" />
+            <span className="pointer-events-none absolute bottom-3 left-3 w-9 h-9 border-b-4 border-l-4 border-[var(--c-acento)] rounded-bl-lg" />
+            <span className="pointer-events-none absolute bottom-3 right-3 w-9 h-9 border-b-4 border-r-4 border-[var(--c-acento)] rounded-br-lg" />
           </div>
 
           {estadoCamara === "activa" && (
@@ -178,39 +177,39 @@ export default function EscanearQR() {
 
         {/* ---------- Informacion del cliente ---------- */}
         <div className={tarjeta}>
-          <p className="text-sm font-medium text-[#EEEEF3]">Informacion del cliente</p>
-          <div className="my-4 h-px bg-[#93834C]/60" />
+          <p className="text-sm font-medium text-[var(--c-texto)]">Informacion del cliente</p>
+          <div className="my-4 h-px bg-[var(--c-borde-suave)]" />
 
           {!cliente ? (
-            <p className="text-sm text-[#E3E3EC]/70 text-center py-10">
+            <p className="text-sm text-[var(--c-texto-tenue)] text-center py-10">
               Escanea un codigo para ver la informacion del cliente
             </p>
           ) : (
             <div className="flex items-center gap-4">
-              <div className="w-[72px] h-[72px] shrink-0 rounded-full border-2 border-[#AC933D] bg-[#111111] flex items-center justify-center text-3xl font-bold text-[#AC933D]">
+              <div className="w-[72px] h-[72px] shrink-0 rounded-full border-2 border-[var(--c-acento)] bg-[var(--c-campo)] flex items-center justify-center text-3xl font-bold text-[var(--c-acento)]">
                 {inicial}
               </div>
               <div className="min-w-0">
-                <p className="text-lg font-bold text-[#EEEEF3] truncate">{cliente.nombre}</p>
-                <p className="text-sm text-[#E3E3EC] mt-1">Membresia: {cliente.numMembresia}</p>
-                <p className="text-sm text-[#E3E3EC] mt-1 flex items-center gap-2">
+                <p className="text-lg font-bold text-[var(--c-texto)] truncate">{cliente.nombre}</p>
+                <p className="text-sm text-[var(--c-texto-sec)] mt-1">Membresia: {cliente.numMembresia}</p>
+                <p className="text-sm text-[var(--c-texto-sec)] mt-1 flex items-center gap-2">
                   Estado: <Badge estado={cliente.estado} />
                 </p>
                 {cliente.fechaRegistro && (
-                  <p className="text-sm text-[#E3E3EC] mt-1">Registro: {cliente.fechaRegistro}</p>
+                  <p className="text-sm text-[var(--c-texto-sec)] mt-1">Registro: {cliente.fechaRegistro}</p>
                 )}
               </div>
             </div>
           )}
 
-          <div className="my-4 h-px bg-[#93834C]/60" />
+          <div className="my-4 h-px bg-[var(--c-borde-suave)]" />
 
           {aviso && (
             <p
               className={`mb-3 rounded-lg border px-4 py-2.5 text-center text-sm font-bold ${
                 aviso.tipo === "ok"
-                  ? "border-[#2E8B57] bg-[#2E8B57]/15 text-[#3FB27F]"
-                  : "border-[#D64545] bg-[#D64545]/15 text-[#E8706F]"
+                  ? "border-[var(--c-verde)] bg-[var(--c-verde-bg)] text-[var(--c-verde-texto)]"
+                  : "border-[var(--c-rojo)] bg-[var(--c-rojo-bg)] text-[var(--c-rojo-texto)]"
               }`}
             >
               {aviso.texto}

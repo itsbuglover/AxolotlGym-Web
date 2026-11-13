@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
+import BotonTema from "../ui/BotonTema.jsx";
 
 const menuPorRol = {
   recepcion: [
@@ -38,17 +39,17 @@ export default function Sidebar() {
 
   return (
     <div className="flex shrink-0">
-      <aside className="w-64 bg-[#111111] flex flex-col">
+      <aside className="w-64 bg-[var(--c-barra)] flex flex-col">
         {/* Encabezado: logo, nombre y rol */}
         <div className="px-5 pt-6 pb-5 flex flex-col items-center">
           <img src="/logo_final.png" alt="Axolotl" className="w-28 h-28 object-contain" />
-          <p className="mt-3 text-lg font-bold tracking-[0.3em] text-[#EEEEF3]">AXOLOTL</p>
-          <span className="mt-2 px-3.5 py-1 rounded-full border border-[#AC933D] bg-[#AC933D]/15 text-xs font-bold text-[#AC933D]">
+          <p className="mt-3 text-lg font-bold tracking-[0.3em] text-[var(--c-texto)]">AXOLOTL</p>
+          <span className="mt-2 px-3.5 py-1 rounded-full border border-[var(--c-acento)] bg-[var(--c-acento-15)] text-xs font-bold text-[var(--c-acento)]">
             {etiquetaRol[usuario?.rol] || usuario?.rol}
           </span>
         </div>
 
-        <div className="mx-5 h-[1.5px] bg-gradient-to-r from-[#93834C] to-[#AC933D]" />
+        <div className="mx-5 h-[1.5px] bg-gradient-to-r from-[var(--c-borde)] to-[var(--c-acento)]" />
 
         {/* Navegación */}
         <nav className="flex-1 px-4 py-4 space-y-1.5">
@@ -60,8 +61,8 @@ export default function Sidebar() {
               className={({ isActive }) =>
                 `block px-4 py-3 rounded-xl text-sm transition-colors border ${
                   isActive
-                    ? "border-[#AC933D] bg-gradient-to-r from-[#AC933D]/30 to-[#AC933D]/5 text-[#EEEEF3] font-bold"
-                    : "border-transparent text-[#E3E3EC] font-medium hover:bg-white/5"
+                    ? "border-[var(--c-acento)] bg-gradient-to-r from-[var(--c-acento-30)] to-[var(--c-acento-5)] text-[var(--c-texto)] font-bold"
+                    : "border-transparent text-[var(--c-texto-sec)] font-medium hover:bg-[var(--c-borde-20)]"
                 }`
               }
             >
@@ -70,17 +71,18 @@ export default function Sidebar() {
           ))}
         </nav>
 
-        {/* Usuario y cerrar sesión */}
+        {/* Usuario, tema y cerrar sesión */}
         <div className="px-4 pb-5">
           <div className="flex items-center gap-3 px-2 mb-3">
-            <div className="w-9 h-9 shrink-0 rounded-full border border-[#AC933D] bg-[#222223] flex items-center justify-center text-sm font-bold text-[#AC933D]">
+            <div className="w-9 h-9 shrink-0 rounded-full border border-[var(--c-acento)] bg-[var(--c-fondo)] flex items-center justify-center text-sm font-bold text-[var(--c-acento)]">
               {inicial}
             </div>
-            <p className="text-sm text-[#EEEEF3] truncate">{usuario?.nombre}</p>
+            <p className="flex-1 text-sm text-[var(--c-texto)] truncate">{usuario?.nombre}</p>
+            <BotonTema />
           </div>
           <button
             onClick={logout}
-            className="w-full text-left px-4 py-3 rounded-xl text-sm font-bold text-[#D64545] border border-[#D64545]/70 bg-[#D64545]/10 hover:bg-[#D64545]/20 transition-colors"
+            className="w-full text-left px-4 py-3 rounded-xl text-sm font-bold text-[var(--c-rojo)] border border-[var(--c-rojo-70)] bg-[var(--c-rojo-10)] hover:bg-[var(--c-rojo-20)] transition-colors"
           >
             Cerrar sesión
           </button>
@@ -88,7 +90,7 @@ export default function Sidebar() {
       </aside>
 
       {/* Borde derecho dorado */}
-      <div className="w-[2px] bg-gradient-to-b from-[#93834C] to-[#AC933D]" />
+      <div className="w-[2px] bg-gradient-to-b from-[var(--c-borde)] to-[var(--c-acento)]" />
     </div>
   );
 }

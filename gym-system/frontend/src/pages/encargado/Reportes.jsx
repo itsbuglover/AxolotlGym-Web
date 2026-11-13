@@ -32,7 +32,7 @@ export default function Reportes() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-[#EEEEF3] mb-6">Reportes mensuales</h1>
+      <h1 className="text-xl font-semibold text-[var(--c-texto)] mb-6">Reportes mensuales</h1>
       <Table columnas={columnas} filas={reportes} />
     </div>
   );

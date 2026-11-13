@@ -53,7 +53,7 @@ const vFecha = (v) => {
 };
 
 const Err = ({ msg }) =>
-  msg ? <p className="text-xs text-red-400 -mt-2 mb-3">{msg}</p> : null;
+  msg ? <p className="text-xs text-[var(--c-rojo)] -mt-2 mb-3">{msg}</p> : null;
 
 const vacio = { concepto: "", categoria: "", monto: "", fecha: "" };
 
@@ -160,7 +160,7 @@ export default function Gastos() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-[#EEEEF3] mb-6">Gastos</h1>
+        <h1 className="text-xl font-semibold text-[var(--c-texto)] mb-6">Gastos</h1>
         <Boton onClick={abrirNuevo}>+ Nuevo gasto</Boton>
       </div>
 
