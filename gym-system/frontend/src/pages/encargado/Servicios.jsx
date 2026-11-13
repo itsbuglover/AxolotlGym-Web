@@ -33,7 +33,7 @@ const vMonto = (v, etiqueta) => {
 };
 
 const Err = ({ msg }) =>
-  msg ? <p className="text-xs text-red-400 -mt-2 mb-3">{msg}</p> : null;
+  msg ? <p className="text-xs text-[var(--c-rojo)] -mt-2 mb-3">{msg}</p> : null;
 
 const vacio = { nombre: "", duracion: "", precio: "" };
 
@@ -136,7 +136,7 @@ export default function Servicios() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-[#EEEEF3] mb-6">Servicios</h1>
+        <h1 className="text-xl font-semibold text-[var(--c-texto)] mb-6">Servicios</h1>
         <Boton onClick={abrirNuevo}>+ Nuevo servicio</Boton>
       </div>
 

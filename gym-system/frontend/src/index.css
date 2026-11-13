@@ -2,23 +2,347 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Paleta: fondo #222223 · grafito #111111 · tarjetas #3D3D3F · dorado #AC933D · borde #93834C */
+/* =========================================================
+   PALETA OSCURA (por defecto)
+   ========================================================= */
 :root {
-  color-scheme: dark; /* selects, calendarios y barras de scroll nativos en oscuro */
+  --c-fondo: #222223;
+  --c-barra: #111111;
+  --c-tarjeta: #3D3D3F;
+  --c-campo: #111111;
+  --c-borde: #93834C;
+  --c-borde-suave: rgba(147, 131, 76, 0.6);
+  --c-acento: #AC933D;
+  --c-acento-texto: #D4B24C;
+  --c-bronce: #8E723A;
+  --c-sobre-acento: #111111;
+  --c-texto: #EEEEF3;
+  --c-texto-sec: #E3E3EC;
+  --c-texto-tenue: rgba(227, 227, 236, 0.6);
+  --c-verde: #2E8B57;
+  --c-verde-texto: #3FB27F;
+  --c-verde-bg: rgba(46, 139, 87, 0.15);
+  --c-rojo: #D64545;
+  --c-rojo-texto: #E8706F;
+  --c-rojo-bg: rgba(214, 69, 69, 0.15);
+  --c-ambar: #D98E32;
+  --c-ambar-texto: #E8A64F;
+  --c-barras: #AF9A54;
+  --c-rejilla: rgba(147, 131, 76, 0.25);
+  --c-tooltip: #111111;
+  --c-glow: rgba(212, 175, 55, 0.2);
+  --c-scroll-pista: #111111;
+  --c-seleccion-texto: #111111;
+
+  /* Fondo animado (en oscuro reutiliza la paleta normal) */
+  --c-fx: #AC933D;
+  --c-fx-2: #93834C;
+
+  /* Variantes con opacidad (Tailwind no aplica /xx a var(...)) */
+  --c-acento-5: color-mix(in srgb, var(--c-acento) 5%, transparent);
+  --c-acento-10: color-mix(in srgb, var(--c-acento) 10%, transparent);
+  --c-acento-15: color-mix(in srgb, var(--c-acento) 15%, transparent);
+  --c-acento-30: color-mix(in srgb, var(--c-acento) 30%, transparent);
+  --c-acento-60: color-mix(in srgb, var(--c-acento) 60%, transparent);
+  --c-borde-20: color-mix(in srgb, var(--c-borde) 20%, transparent);
+  --c-borde-30: color-mix(in srgb, var(--c-borde) 30%, transparent);
+  --c-rojo-10: color-mix(in srgb, var(--c-rojo) 10%, transparent);
+  --c-rojo-20: color-mix(in srgb, var(--c-rojo) 20%, transparent);
+  --c-rojo-70: color-mix(in srgb, var(--c-rojo) 70%, transparent);
+
+  color-scheme: dark;
 }
 
+/* =========================================================
+   PALETA CLARA (la de ClienteTema en Kotlin, con mas contraste)
+   ========================================================= */
+:root[data-tema="claro"] {
+  --c-fondo: #F1EFEB;
+  --c-barra: #E4E2DE;
+  --c-tarjeta: #FAF9F7;
+  --c-campo: #FAF9F7;
+  --c-borde: #B89B45;
+  --c-borde-suave: rgba(184, 155, 69, 0.6);
+  --c-acento: #8A6D12;
+  --c-acento-texto: #8A6D12;
+  --c-bronce: #7A5C1A;
+  --c-sobre-acento: #FFFFFF;
+  --c-texto: #1B1C1F;
+  --c-texto-sec: #5B5E66;
+  --c-texto-tenue: rgba(91, 94, 102, 0.7);
+  --c-verde: #1B7243;
+  --c-verde-texto: #1B7243;
+  --c-verde-bg: #D3EFDC;
+  --c-rojo: #B92B2B;
+  --c-rojo-texto: #B92B2B;
+  --c-rojo-bg: #FBD9D9;
+  --c-ambar: #B26A00;
+  --c-ambar-texto: #B26A00;
+  --c-barras: #AF9A54;
+  --c-rejilla: rgba(184, 155, 69, 0.4);
+  --c-tooltip: #FAF9F7;
+  --c-glow: rgba(212, 175, 55, 0.15);
+  --c-scroll-pista: #E4E2DE;
+  --c-seleccion-texto: #FFFFFF;
+
+  /* Fondo animado: dorado profundo y bronce oscuro */
+  --c-fx: #9A7A10;
+  --c-fx-2: #6F5208;
+
+  color-scheme: light;
+}
+
+/* =========================================================
+   BASE
+   ========================================================= */
 body {
-  background-color: #222223;
-  color: #EEEEF3;
+  background-color: var(--c-fondo);
+  color: var(--c-texto);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 ::selection {
-  background: #AC933D;
-  color: #111111;
+  background: var(--c-acento);
+  color: var(--c-seleccion-texto);
 }
 
 /* Scroll discreto en dorado apagado */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #93834C #111111;
+  scrollbar-color: var(--c-borde) var(--c-scroll-pista);
+}
+
+/* =========================================================
+   FONDO ANIMADO DEL LOGIN
+   ========================================================= */
+@property --ang {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes fx-borde { to { --ang: 360deg; } }
+@keyframes fx-deriva-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-8vw, 8vh) scale(1.25); }
+}
+@keyframes fx-deriva-b {
+  0%, 100% { transform: translate(0, 0) scale(1.1); }
+  50% { transform: translate(10vw, -6vh) scale(0.9); }
+}
+@keyframes fx-deriva-c {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(6vw, 10vh) scale(1.3); }
+}
+@keyframes fx-piso { to { background-position: 0 80px; } }
+@keyframes fx-izq { to { transform: translateX(-50%); } }
+@keyframes fx-der { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+@keyframes fx-entrada {
+  from { opacity: 0; transform: translateY(18px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Luces difusas */
+.fx-aurora {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(80px);
+}
+.fx-aurora-a {
+  width: 48vw; height: 48vw; top: -18vw; right: -12vw; opacity: 0.7;
+  background: radial-gradient(circle, var(--c-acento-30), transparent 70%);
+  animation: fx-deriva-a 18s ease-in-out infinite;
+}
+.fx-aurora-b {
+  width: 55vw; height: 55vw; bottom: -25vw; left: -15vw; opacity: 0.45;
+  background: radial-gradient(circle, var(--c-bronce), transparent 70%);
+  animation: fx-deriva-b 24s ease-in-out infinite;
+}
+.fx-aurora-c {
+  width: 30vw; height: 30vw; top: 30%; left: 35%; opacity: 0.35;
+  background: radial-gradient(circle, var(--c-acento-30), transparent 70%);
+  animation: fx-deriva-c 20s ease-in-out infinite;
+}
+
+/* Piso de cuadros en perspectiva */
+.fx-piso-escena {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 55%;
+  overflow: hidden;
+  perspective: 600px;
+}
+.fx-piso {
+  position: absolute;
+  left: -100%; width: 300%;
+  top: 0; height: 100%;
+  transform-origin: top center;
+  transform: rotateX(62deg);
+  background-image:
+    linear-gradient(var(--c-borde) 1px, transparent 1px),
+    linear-gradient(90deg, var(--c-borde) 1px, transparent 1px);
+  background-size: 80px 80px;
+  opacity: 0.55;
+  animation: fx-piso 3s linear infinite;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 45%);
+  mask-image: linear-gradient(to bottom, transparent, #000 45%);
+}
+
+/* Palabras gigantes en contorno */
+.fx-fila {
+  position: absolute;
+  left: 0;
+  display: flex;
+  width: max-content;
+  white-space: nowrap;
+  font-weight: 900;
+  font-size: clamp(4rem, 10vw, 9rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  -webkit-text-stroke: 1px var(--c-borde);
+  color: transparent;
+  opacity: 0.28;
+}
+.fx-fila-1 { top: 6%; animation: fx-izq 60s linear infinite; }
+.fx-fila-2 { top: 72%; animation: fx-der 75s linear infinite; }
+
+/* Tarjeta de cristal con borde que gira */
+.fx-borde {
+  padding: 1.5px;
+  border-radius: 1rem;
+  background: conic-gradient(
+    from var(--ang),
+    var(--c-borde-30),
+    var(--c-acento),
+    var(--c-borde-30) 40%,
+    var(--c-bronce) 70%,
+    var(--c-borde-30)
+  );
+  animation: fx-borde 7s linear infinite, fx-entrada 0.7s ease-out both;
+}
+.fx-cristal {
+  background: color-mix(in srgb, var(--c-tarjeta) 82%, transparent);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+/* =========================================================
+   PESAS Y RAYOS FLOTANDO
+   ========================================================= */
+@keyframes fx-sube {
+  0% { transform: translateY(0) rotate(var(--r0)); opacity: 0; }
+  10% { opacity: var(--o); }
+  90% { opacity: var(--o); }
+  100% { transform: translateY(-125vh) rotate(var(--r1)); opacity: 0; }
+}
+@keyframes fx-parpadeo {
+  0%, 100% { opacity: 1; }
+  45% { opacity: 1; }
+  50% { opacity: 0.3; }
+  55% { opacity: 1; }
+  60% { opacity: 0.5; }
+  65% { opacity: 1; }
+}
+
+.fx-icono {
+  position: absolute;
+  left: var(--x);
+  top: 100%;
+  width: var(--s);
+  opacity: 0;
+  filter: drop-shadow(0 0 8px var(--c-acento-30));
+  animation: fx-sube var(--d) linear infinite;
+  animation-delay: var(--t);
+}
+.fx-icono svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  fill: var(--c-acento-15);
+  stroke: var(--c-acento);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* Rayos: relleno mas fuerte y parpadeo */
+.fx-rayo { filter: drop-shadow(0 0 14px var(--c-acento-60)); }
+.fx-rayo svg {
+  fill: var(--c-acento-30);
+  animation: fx-parpadeo 2.6s linear infinite;
+  animation-delay: var(--t);
+}
+
+/* =========================================================
+   AJUSTES PARA MODO CLARO (mas contraste)
+   ========================================================= */
+
+/* Letras gigantes: contorno mas grueso y oscuro */
+:root[data-tema="claro"] .fx-fila {
+  -webkit-text-stroke: 1.5px var(--c-fx-2);
+  opacity: 0.4;
+}
+
+/* Piso de cuadros: lineas doradas profundas */
+:root[data-tema="claro"] .fx-piso {
+  background-image:
+    linear-gradient(var(--c-fx) 1.5px, transparent 1.5px),
+    linear-gradient(90deg, var(--c-fx) 1.5px, transparent 1.5px);
+  opacity: 0.7;
+}
+
+/* Auroras: mas color */
+:root[data-tema="claro"] .fx-aurora-a {
+  opacity: 1;
+  background: radial-gradient(circle, color-mix(in srgb, var(--c-fx) 55%, transparent), transparent 70%);
+}
+:root[data-tema="claro"] .fx-aurora-b {
+  opacity: 0.5;
+  background: radial-gradient(circle, color-mix(in srgb, var(--c-bronce) 60%, transparent), transparent 70%);
+}
+:root[data-tema="claro"] .fx-aurora-c {
+  opacity: 0.8;
+  background: radial-gradient(circle, color-mix(in srgb, var(--c-fx) 45%, transparent), transparent 70%);
+}
+
+/* Pesas y rayos: trazo grueso oscuro, relleno dorado y sombra suave */
+:root[data-tema="claro"] .fx-icono {
+  filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--c-fx-2) 35%, transparent));
+}
+:root[data-tema="claro"] .fx-icono svg {
+  stroke: var(--c-fx-2);
+  stroke-width: 4;
+  fill: color-mix(in srgb, var(--c-fx) 38%, transparent);
+}
+:root[data-tema="claro"] .fx-rayo {
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--c-fx) 70%, transparent));
+}
+:root[data-tema="claro"] .fx-rayo svg {
+  fill: color-mix(in srgb, var(--c-fx) 65%, transparent);
+}
+
+/* Tarjeta del login: borde giratorio mas fuerte y sombra para despegarla del fondo */
+:root[data-tema="claro"] .fx-borde {
+  background: conic-gradient(
+    from var(--ang),
+    var(--c-fx-2),
+    var(--c-fx),
+    var(--c-borde) 40%,
+    var(--c-fx-2) 70%,
+    var(--c-borde)
+  );
+  box-shadow: 0 18px 50px -12px color-mix(in srgb, var(--c-fx-2) 45%, transparent);
+}
+:root[data-tema="claro"] .fx-cristal {
+  background: color-mix(in srgb, var(--c-tarjeta) 92%, transparent);
+}
+
+/* =========================================================
+   REDUCIR MOVIMIENTO (accesibilidad)
+   ========================================================= */
+@media (prefers-reduced-motion: reduce) {
+  .fx-aurora, .fx-piso, .fx-fila, .fx-borde { animation: none; }
+  .fx-icono { animation: none; top: var(--y); opacity: 0.45; transform: rotate(var(--r0)); }
+  .fx-rayo svg { animation: none; }
 }

@@ -6,10 +6,9 @@ import Boton from "../../components/ui/Boton.jsx";
 import Modal from "../../components/ui/Modal.jsx";
 import Input from "../../components/ui/Input.jsx";
 
-// Paleta: fondo #222223 · tarjetas #3D3D3F · campos #111111 · dorado #AC933D · borde #93834C · bronce #8E723A
 const campo =
-  "bg-[#111111] border border-[#93834C] rounded-md px-3 py-2 text-sm text-[#EEEEF3] " +
-  "placeholder:text-[#E3E3EC]/60 focus:outline-none focus:border-[#AC933D] focus:ring-1 focus:ring-[#AC933D]";
+  "bg-[var(--c-campo)] border border-[var(--c-borde)] rounded-md px-3 py-2 text-sm text-[var(--c-texto)] " +
+  "placeholder:text-[var(--c-texto-tenue)] focus:outline-none focus:border-[var(--c-acento)] focus:ring-1 focus:ring-[var(--c-acento)]";
 
 // ---------- Validaciones ----------
 const LETRAS = "A-Za-zÁÉÍÓÚÜÑáéíóúüñ";
@@ -57,16 +56,16 @@ const vEntero = (v, etiqueta) => {
 };
 
 const Err = ({ msg }) =>
-  msg ? <p className="text-xs text-red-400 -mt-2 mb-3">{msg}</p> : null;
+  msg ? <p className="text-xs text-[var(--c-rojo)] -mt-2 mb-3">{msg}</p> : null;
 
 // Select con la paleta de la app
 function SelectPaleta({ label, value, onChange, options }) {
   return (
     <div className="mb-3">
-      <label className="block text-sm text-[#E3E3EC] mb-1">{label}</label>
+      <label className="block text-sm text-[var(--c-texto-sec)] mb-1">{label}</label>
       <select value={value} onChange={onChange} className={`w-full ${campo}`}>
         {options.map((o) => (
-          <option key={o.value} value={o.value} className="bg-[#111111] text-[#EEEEF3]">
+          <option key={o.value} value={o.value} className="bg-[var(--c-campo)] text-[var(--c-texto)]">
             {o.label}
           </option>
         ))}
@@ -188,7 +187,7 @@ export default function Usuarios() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-[#EEEEF3] mb-6">Usuarios</h1>
+        <h1 className="text-xl font-semibold text-[var(--c-texto)] mb-6">Usuarios</h1>
         <Boton onClick={abrirNuevo}>+ Nuevo usuario</Boton>
       </div>
 

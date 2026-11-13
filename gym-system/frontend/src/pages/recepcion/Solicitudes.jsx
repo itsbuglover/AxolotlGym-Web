@@ -42,7 +42,7 @@ export default function Solicitudes() {
             <Boton variante="peligro" onClick={() => rechazar(f.id)}>Rechazar</Boton>
           </div>
         ) : (
-          <span className="text-[#E3E3EC]/60 text-xs">Sin acciones</span>
+          <span className="text-[var(--c-texto-tenue)] text-xs">Sin acciones</span>
         ),
     },
   ];
@@ -52,9 +52,9 @@ export default function Solicitudes() {
   return (
     <div>
       <div className="flex items-center gap-2 mb-6">
-        <h1 className="text-xl font-semibold text-[#EEEEF3]">Solicitudes</h1>
+        <h1 className="text-xl font-semibold text-[var(--c-texto)]">Solicitudes</h1>
         {pendientes > 0 && (
-          <span className="bg-[#D64545] text-white text-xs rounded-full px-2 py-0.5">{pendientes}</span>
+          <span className="bg-[var(--c-rojo)] text-white text-xs rounded-full px-2 py-0.5">{pendientes}</span>
         )}
       </div>
       <Table columnas={columnas} filas={solicitudes} />
