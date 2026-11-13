@@ -1,10 +1,10 @@
 // Tabla generica: columnas = [{ key, label, render? }], filas = [...]
 export default function Table({ columnas, filas, vacio = "Sin resultados" }) {
   return (
-    <div className="overflow-x-auto bg-[#3D3D3F] border border-[#93834C] rounded-lg">
-      <table className="min-w-full text-sm text-[#EEEEF3]">
+    <div className="overflow-x-auto bg-[var(--c-tarjeta)] border border-[var(--c-borde)] rounded-lg">
+      <table className="min-w-full text-sm text-[var(--c-texto)]">
         <thead>
-          <tr className="border-b border-[#93834C]/60 text-left text-[#AC933D]">
+          <tr className="border-b border-[var(--c-borde-suave)] text-left text-[var(--c-acento)]">
             {columnas.map((col) => (
               <th key={col.key} className="px-4 py-3 font-medium">{col.label}</th>
             ))}
@@ -13,13 +13,13 @@ export default function Table({ columnas, filas, vacio = "Sin resultados" }) {
         <tbody>
           {filas.length === 0 && (
             <tr>
-              <td colSpan={columnas.length} className="px-4 py-8 text-center text-[#E3E3EC]/60">
+              <td colSpan={columnas.length} className="px-4 py-8 text-center text-[var(--c-texto-tenue)]">
                 {vacio}
               </td>
             </tr>
           )}
           {filas.map((fila, i) => (
-            <tr key={fila.id ?? i} className="border-b border-[#93834C]/30 last:border-0 hover:bg-white/5">
+            <tr key={fila.id ?? i} className="border-b border-[var(--c-borde-30)] last:border-0 hover:bg-[var(--c-borde-20)]">
               {columnas.map((col) => (
                 <td key={col.key} className="px-4 py-3">
                   {col.render ? col.render(fila) : fila[col.key]}

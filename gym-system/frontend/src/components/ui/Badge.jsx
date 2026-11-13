@@ -1,13 +1,17 @@
 export default function Badge({ estado }) {
   const estilos = {
-    activo: "bg-[#2E8B57]/20 text-[#3FB27F]",
-    aprobada: "bg-[#2E8B57]/20 text-[#3FB27F]",
-    inactivo: "bg-[#D64545]/20 text-[#E8706F]",
-    pendiente: "bg-[#AC933D]/20 text-[#D4B24C]",
-    rechazada: "bg-[#D64545]/20 text-[#E8706F]",
+    activo: "bg-[var(--c-verde-bg)] text-[var(--c-verde-texto)]",
+    aprobada: "bg-[var(--c-verde-bg)] text-[var(--c-verde-texto)]",
+    inactivo: "bg-[var(--c-rojo-bg)] text-[var(--c-rojo-texto)]",
+    pendiente: "bg-[var(--c-acento-15)] text-[var(--c-acento-texto)]",
+    rechazada: "bg-[var(--c-rojo-bg)] text-[var(--c-rojo-texto)]",
   };
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium ${estilos[estado] || "bg-white/10 text-[#E3E3EC]"}`}>
+    <span
+      className={`px-2 py-1 rounded-full text-xs font-medium ${
+        estilos[estado] || "bg-[var(--c-borde-20)] text-[var(--c-texto-sec)]"
+      }`}
+    >
       {estado}
     </span>
   );

@@ -1,10 +1,10 @@
 export default function Boton({ children, variante = "primary", className = "", ...props }) {
   const variantes = {
-    primary: "bg-[#8E723A] hover:bg-[#AC933D] text-white",
-    outline: "border border-[#AC933D] text-[#AC933D] hover:bg-[#AC933D]/10",
-    ghost: "text-[#E3E3EC] hover:bg-white/10",
-    exito: "bg-[#2E8B57] hover:bg-[#267349] text-white",
-    peligro: "bg-[#D64545] hover:bg-[#B93A3A] text-white",
+    primary: "bg-[var(--c-bronce)] hover:bg-[var(--c-acento)] text-[var(--c-sobre-acento)]",
+    outline: "border border-[var(--c-acento)] text-[var(--c-acento)] hover:bg-[var(--c-acento-10)]",
+    ghost: "text-[var(--c-texto-sec)] hover:bg-[var(--c-borde-20)]",
+    exito: "bg-[var(--c-verde)] hover:brightness-90 text-white",
+    peligro: "bg-[var(--c-rojo)] hover:brightness-90 text-white",
   };
   return (
     <button
