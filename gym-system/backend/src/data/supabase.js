@@ -5,7 +5,9 @@
 // ==========================================================================
 import { createClient } from "@supabase/supabase-js";
 
-const { SUPABASE_URL, SUPABASE_KEY } = process.env;
+// trim(): quita espacios o saltos de linea que se cuelan al pegar las llaves en Render
+const SUPABASE_URL = (process.env.SUPABASE_URL || "").trim();
+const SUPABASE_KEY = (process.env.SUPABASE_KEY || "").trim();
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.error(

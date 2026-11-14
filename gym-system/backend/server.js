@@ -34,10 +34,13 @@ app.get("/", (req, res) => {
   res.json({ ok: true, mensaje: "API Gym System activa" });
 });
 
-// Manejador de errores simple
+// Manejador de errores: los errores de negocio (400/404...) muestran su mensaje;
+// los internos (500) solo se escriben en el log de Render, nunca se mandan al navegador.
 app.use((err, req, res, next) => {
+  const status = err.status || 500;
   console.error(err);
-  res.status(err.status || 500).json({ ok: false, mensaje: err.message || "Error interno" });
+  const mensaje = status < 500 ? err.message : "Error interno del servidor. Revisa los logs de Render.";
+  res.status(status).json({ ok: false, mensaje });
 });
 
 const PORT = process.env.PORT || 4000;
