@@ -7,6 +7,7 @@ const menuPorRol = {
     { to: "/recepcion", label: "Escanear QR", fin: true },
     { to: "/recepcion/clientes", label: "Clientes" },
     { to: "/recepcion/solicitudes", label: "Solicitudes" },
+    { to: "/recepcion/pagos", label: "Pagos" },
   ],
   encargado: [
     { to: "/encargado", label: "Dashboard", fin: true },
@@ -15,6 +16,7 @@ const menuPorRol = {
     { to: "/encargado/servicios", label: "Servicios" },
     { to: "/encargado/gastos", label: "Gastos" },
     { to: "/encargado/reportes", label: "Reportes" },
+    { to: "/encargado/pagos", label: "Pagos" },
   ],
   dueno: [
     { to: "/encargado", label: "Dashboard", fin: true },
@@ -23,6 +25,7 @@ const menuPorRol = {
     { to: "/encargado/servicios", label: "Servicios" },
     { to: "/encargado/gastos", label: "Gastos" },
     { to: "/encargado/reportes", label: "Reportes" },
+    { to: "/encargado/pagos", label: "Pagos" },
   ],
 };
 
