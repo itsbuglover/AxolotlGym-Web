@@ -1,42 +1,36 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useIdioma } from "../../context/IdiomaContext.jsx";
 import BotonTema from "../ui/BotonTema.jsx";
-
-const menuPorRol = {
-  recepcion: [
-    { to: "/recepcion", label: "Escanear QR", fin: true },
-    { to: "/recepcion/clientes", label: "Clientes" },
-    { to: "/recepcion/solicitudes", label: "Solicitudes" },
-    { to: "/recepcion/pagos", label: "Pagos" },
-  ],
-  encargado: [
-    { to: "/encargado", label: "Dashboard", fin: true },
-    { to: "/encargado/clientes", label: "Clientes" },
-    { to: "/encargado/personal", label: "Personal" },
-    { to: "/encargado/servicios", label: "Servicios" },
-    { to: "/encargado/gastos", label: "Gastos" },
-    { to: "/encargado/reportes", label: "Reportes" },
-    { to: "/encargado/pagos", label: "Pagos" },
-  ],
-  dueno: [
-    { to: "/encargado", label: "Dashboard", fin: true },
-    { to: "/encargado/clientes", label: "Clientes" },
-    { to: "/encargado/personal", label: "Personal" },
-    { to: "/encargado/servicios", label: "Servicios" },
-    { to: "/encargado/gastos", label: "Gastos" },
-    { to: "/encargado/reportes", label: "Reportes" },
-    { to: "/encargado/pagos", label: "Pagos" },
-  ],
-};
-
-const etiquetaRol = {
-  recepcion: "Recepción",
-  encargado: "Encargado",
-  dueno: "Dueño",
-};
 
 export default function Sidebar() {
   const { usuario, logout } = useAuth();
+  const { idioma, alternarIdioma, tr } = useIdioma();
+
+  const menuPorRol = {
+    recepcion: [
+      { to: "/recepcion", label: tr.menu.escanearQr, fin: true },
+      { to: "/recepcion/clientes", label: tr.menu.clientes },
+      { to: "/recepcion/solicitudes", label: tr.menu.solicitudes },
+    ],
+    encargado: [
+      { to: "/encargado", label: tr.menu.dashboard, fin: true },
+      { to: "/encargado/clientes", label: tr.menu.clientes },
+      { to: "/encargado/personal", label: tr.menu.personal },
+      { to: "/encargado/servicios", label: tr.menu.servicios },
+      { to: "/encargado/gastos", label: tr.menu.gastos },
+      { to: "/encargado/reportes", label: tr.menu.reportes },
+    ],
+    dueno: [
+      { to: "/encargado", label: tr.menu.dashboard, fin: true },
+      { to: "/encargado/clientes", label: tr.menu.clientes },
+      { to: "/encargado/personal", label: tr.menu.personal },
+      { to: "/encargado/servicios", label: tr.menu.servicios },
+      { to: "/encargado/gastos", label: tr.menu.gastos },
+      { to: "/encargado/reportes", label: tr.menu.reportes },
+    ],
+  };
+
   const items = menuPorRol[usuario?.rol] || [];
   const inicial = (usuario?.nombre || "?").trim().charAt(0).toUpperCase();
 
@@ -48,7 +42,7 @@ export default function Sidebar() {
           <img src="/logo_final.png" alt="Axolotl" className="w-28 h-28 object-contain" />
           <p className="mt-3 text-lg font-bold tracking-[0.3em] text-[var(--c-texto)]">AXOLOTL</p>
           <span className="mt-2 px-3.5 py-1 rounded-full border border-[var(--c-acento)] bg-[var(--c-acento-15)] text-xs font-bold text-[var(--c-acento)]">
-            {etiquetaRol[usuario?.rol] || usuario?.rol}
+            {tr.roles[usuario?.rol] || usuario?.rol}
           </span>
         </div>
 
@@ -72,6 +66,18 @@ export default function Sidebar() {
               {item.label}
             </NavLink>
           ))}
+
+          {/* Opción de idioma en el sidebar */}
+          <button
+            type="button"
+            onClick={alternarIdioma}
+            className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm transition-colors border border-transparent text-[var(--c-texto-sec)] font-medium hover:bg-[var(--c-borde-20)]"
+          >
+            <span>{tr.etiquetaIdioma}</span>
+            <span className="px-2 py-0.5 rounded-full border border-[var(--c-acento)] bg-[var(--c-acento-15)] text-[11px] font-bold text-[var(--c-acento)]">
+              {idioma === "es" ? "ES → EN" : "EN → ES"}
+            </span>
+          </button>
         </nav>
 
         {/* Usuario, tema y cerrar sesión */}
@@ -87,7 +93,7 @@ export default function Sidebar() {
             onClick={logout}
             className="w-full text-left px-4 py-3 rounded-xl text-sm font-bold text-[var(--c-rojo)] border border-[var(--c-rojo-70)] bg-[var(--c-rojo-10)] hover:bg-[var(--c-rojo-20)] transition-colors"
           >
-            Cerrar sesión
+            {tr.menu.cerrarSesion}
           </button>
         </div>
       </aside>

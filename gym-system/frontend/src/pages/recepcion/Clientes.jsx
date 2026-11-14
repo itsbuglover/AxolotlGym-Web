@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../api/api.js";
+import { useIdioma } from "../../context/IdiomaContext.jsx";
 import Table from "../../components/ui/Table.jsx";
 import Badge from "../../components/ui/Badge.jsx";
 import Boton from "../../components/ui/Boton.jsx";
@@ -18,26 +19,13 @@ const limpiarLetras = (v) =>
   v.replace(new RegExp(`[^${LETRAS} ]`, "g"), "").replace(/^\s+/, "").replace(/\s{2,}/g, " ");
 const limpiarTelefono = (v) => v.replace(/\D/g, "").slice(0, 10);
 
-const vNombre = (v, etiqueta) => {
-  const t = v.trim();
-  if (!t) return `${etiqueta} es obligatorio`;
-  if (t.length < 3) return `${etiqueta}: mínimo 3 letras`;
-  if (!REGEX_LETRAS.test(t)) return `${etiqueta}: solo letras`;
-  return "";
-};
-const vTelefono = (v) => (!v || /^\d{10}$/.test(v) ? "" : "El teléfono debe tener 10 dígitos");
-const vCorreo = (v) => {
-  const t = v.trim();
-  if (!t) return "El correo es obligatorio";
-  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(t) ? "" : "Correo no válido";
-};
-
 const Err = ({ msg }) =>
   msg ? <p className="text-xs text-[var(--c-rojo)] -mt-2 mb-3">{msg}</p> : null;
 
 const formVacio = { nombre: "", apellido: "", telefono: "", correo: "", plan: "" };
 
 export default function Clientes() {
+  const { tr, traducirMsg } = useIdioma();
   const [clientes, setClientes] = useState([]);
   const [planes, setPlanes] = useState([]); // vienen de tipos_membresia en Supabase
   const [aviso, setAviso] = useState("");
@@ -47,6 +35,20 @@ export default function Clientes() {
   const [editandoId, setEditandoId] = useState(null); // null = creando, id = editando
   const [form, setForm] = useState(formVacio);
   const [errores, setErrores] = useState({});
+
+  const vNombre = (v, etiqueta) => {
+    const t = v.trim();
+    if (!t) return tr.val.esObligatorio(etiqueta);
+    if (t.length < 3) return tr.val.minLetras(etiqueta);
+    if (!REGEX_LETRAS.test(t)) return tr.val.soloLetras(etiqueta);
+    return "";
+  };
+  const vTelefono = (v) => (!v || /^\d{10}$/.test(v) ? "" : tr.val.telefono10);
+  const vCorreo = (v) => {
+    const t = v.trim();
+    if (!t) return tr.val.correoObligatorio;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(t) ? "" : tr.val.correoInvalido;
+  };
 
   useEffect(() => {
     cargar();
@@ -106,11 +108,11 @@ export default function Clientes() {
     e.preventDefault();
 
     const errs = {
-      nombre: vNombre(form.nombre, "Nombre"),
-      apellido: vNombre(form.apellido, "Apellido"),
+      nombre: vNombre(form.nombre, tr.clientes.nombre),
+      apellido: vNombre(form.apellido, tr.clientes.apellido),
       telefono: vTelefono(form.telefono),
       correo: vCorreo(form.correo),
-      plan: form.plan ? "" : "Selecciona un plan",
+      plan: form.plan ? "" : tr.val.seleccionaPlan,
     };
     setErrores(errs);
     if (Object.values(errs).some(Boolean)) return;
@@ -128,10 +130,10 @@ export default function Clientes() {
         setAviso("");
       } else {
         const { data } = await api.post("/clientes", datos);
-        setAviso(data.mensaje || "");
+        setAviso(traducirMsg(data.mensaje) || "");
       }
     } catch (err) {
-      setErrores((er) => ({ ...er, general: err.response?.data?.mensaje || "No se pudo guardar" }));
+      setErrores((er) => ({ ...er, general: traducirMsg(err.response?.data?.mensaje) || tr.clientes.errorGuardar }));
       return;
     }
 
@@ -142,9 +144,9 @@ export default function Clientes() {
   async function renovar(id) {
     try {
       const { data } = await api.put(`/clientes/${id}/renovar`);
-      setAviso(data.mensaje || "Membresia renovada");
+      setAviso(traducirMsg(data.mensaje) || tr.clientes.membresiaRenovada);
     } catch (err) {
-      setAviso(err.response?.data?.mensaje || "No se pudo renovar");
+      setAviso(traducirMsg(err.response?.data?.mensaje) || tr.clientes.errorRenovar);
     }
     cargar();
   }
@@ -152,25 +154,25 @@ export default function Clientes() {
   const columnas = [
     {
       key: "nombre",
-      label: "Nombre",
+      label: tr.clientes.colNombre,
       render: (f) => `${f.nombre ?? ""} ${f.apellido ?? ""}`.trim(),
     },
-    { key: "numMembresia", label: "Membresia" },
+    { key: "numMembresia", label: tr.clientes.colMembresia },
     {
       key: "plan",
-      label: "Plan",
+      label: tr.clientes.colPlan,
       render: (f) => <span className="capitalize">{f.plan}</span>,
     },
-    { key: "fechaRegistro", label: "Fecha registro" },
-    { key: "estado", label: "Estado", render: (f) => <Badge estado={f.estado} /> },
+    { key: "fechaRegistro", label: tr.clientes.colFechaRegistro },
+    { key: "estado", label: tr.clientes.colEstado, render: (f) => <Badge estado={f.estado} /> },
     {
       key: "acciones",
-      label: "Acciones",
+      label: tr.acciones,
       render: (f) =>
         f.estado === "activo" ? (
-          <Boton variante="outline" onClick={() => abrirEditar(f)}>Editar</Boton>
+          <Boton variante="outline" onClick={() => abrirEditar(f)}>{tr.editar}</Boton>
         ) : (
-          <Boton variante="outline" onClick={() => renovar(f.id)}>Renovar</Boton>
+          <Boton variante="outline" onClick={() => renovar(f.id)}>{tr.renovar}</Boton>
         ),
     },
   ];
@@ -178,15 +180,15 @@ export default function Clientes() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-[var(--c-texto)]">Clientes</h1>
-        <Boton onClick={abrirNuevo}>+ Nuevo cliente</Boton>
+        <h1 className="text-xl font-semibold text-[var(--c-texto)]">{tr.clientes.titulo}</h1>
+        <Boton onClick={abrirNuevo}>{tr.clientes.nuevoBtn}</Boton>
       </div>
 
       <div className="flex gap-3 mb-4">
         <input
           value={buscar}
           onChange={(e) => setBuscar(e.target.value)}
-          placeholder="Buscar por nombre o membresia..."
+          placeholder={tr.clientes.buscarPlaceholder}
           className={`flex-1 ${campo}`}
         />
         <select
@@ -194,9 +196,9 @@ export default function Clientes() {
           onChange={(e) => setEstado(e.target.value)}
           className={campo}
         >
-          <option value="">Todos</option>
-          <option value="activo">Activo</option>
-          <option value="inactivo">Inactivo</option>
+          <option value="">{tr.todos}</option>
+          <option value="activo">{tr.clientes.activo}</option>
+          <option value="inactivo">{tr.clientes.inactivo}</option>
         </select>
       </div>
 
@@ -206,18 +208,18 @@ export default function Clientes() {
 
       <Modal
         abierto={modalAbierto}
-        titulo={editandoId ? "Editar cliente" : "Nuevo cliente"}
+        titulo={editandoId ? tr.clientes.modalEditar : tr.clientes.modalNuevo}
         onClose={cerrarModal}
       >
         <form onSubmit={guardarCliente} noValidate>
-          <Input label="Nombre" value={form.nombre} onChange={cambiar("nombre", limpiarLetras)} />
+          <Input label={tr.clientes.nombre} value={form.nombre} onChange={cambiar("nombre", limpiarLetras)} />
           <Err msg={errores.nombre} />
 
-          <Input label="Apellido" value={form.apellido} onChange={cambiar("apellido", limpiarLetras)} />
+          <Input label={tr.clientes.apellido} value={form.apellido} onChange={cambiar("apellido", limpiarLetras)} />
           <Err msg={errores.apellido} />
 
           <Input
-            label="Teléfono"
+            label={tr.clientes.telefono}
             value={form.telefono}
             inputMode="numeric"
             maxLength={10}
@@ -225,18 +227,18 @@ export default function Clientes() {
           />
           <Err msg={errores.telefono} />
 
-          <Input label="Correo" type="email" value={form.correo} onChange={cambiar("correo")} />
+          <Input label={tr.clientes.correo} type="email" value={form.correo} onChange={cambiar("correo")} />
           <Err msg={errores.correo} />
 
           <div className="mb-3">
-            <label className="block text-sm text-[var(--c-texto-sec)] mb-1">Plan</label>
+            <label className="block text-sm text-[var(--c-texto-sec)] mb-1">{tr.clientes.plan}</label>
             <select
               value={form.plan}
               onChange={cambiar("plan")}
               className={`w-full ${campo} ${form.plan ? "text-[var(--c-texto)]" : "text-[var(--c-texto-tenue)]"}`}
             >
               <option value="" disabled className="bg-[var(--c-campo)] text-[var(--c-texto-tenue)]">
-                Selecciona un plan
+                {tr.clientes.seleccionaPlan}
               </option>
               {planes.map((p) => (
                 <option key={p.value} value={p.value} className="bg-[var(--c-campo)] text-[var(--c-texto)]">
@@ -249,7 +251,7 @@ export default function Clientes() {
           <Err msg={errores.general} />
 
           <Boton type="submit" className="w-full mt-2">
-            {editandoId ? "Guardar cambios" : "Guardar cliente"}
+            {editandoId ? tr.guardarCambios : tr.clientes.guardarNuevo}
           </Boton>
         </form>
       </Modal>

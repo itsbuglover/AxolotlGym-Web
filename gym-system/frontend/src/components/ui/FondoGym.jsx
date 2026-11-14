@@ -1,5 +1,6 @@
+import { useIdioma } from "../../context/IdiomaContext.jsx";
+
 // Fondo del login: auroras + palabras gigantes + piso de cuadros + pesas y rayos flotando.
-const PALABRAS = "SUDOR · DISCIPLINA · FUERZA · CONSTANCIA · RESULTADOS · ";
 
 // Trazo y relleno vienen del CSS, asi que siguen el tema claro/oscuro
 const ICONOS = {
@@ -60,6 +61,8 @@ const ITEMS = [
 ];
 
 export default function FondoGym() {
+  const { tr } = useIdioma();
+  const palabras = tr.palabrasFondo;
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
       {/* Luces difusas */}
@@ -69,12 +72,12 @@ export default function FondoGym() {
 
       {/* Palabras gigantes en contorno */}
       <div className="fx-fila fx-fila-1">
-        <span>{PALABRAS.repeat(4)}</span>
-        <span>{PALABRAS.repeat(4)}</span>
+        <span>{palabras.repeat(4)}</span>
+        <span>{palabras.repeat(4)}</span>
       </div>
       <div className="fx-fila fx-fila-2">
-        <span>{PALABRAS.repeat(4)}</span>
-        <span>{PALABRAS.repeat(4)}</span>
+        <span>{palabras.repeat(4)}</span>
+        <span>{palabras.repeat(4)}</span>
       </div>
 
       {/* Piso de cuadros en perspectiva */}

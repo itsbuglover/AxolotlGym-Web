@@ -1,12 +1,14 @@
 import { useTema } from "../../context/TemaContext.jsx";
+import { useIdioma } from "../../context/IdiomaContext.jsx";
 
 export default function BotonTema({ className = "" }) {
   const { claro, alternar } = useTema();
+  const { tr } = useIdioma();
   return (
     <button
       type="button"
       onClick={alternar}
-      aria-label={claro ? "Tema oscuro" : "Tema claro"}
+      aria-label={claro ? tr.temaOscuro : tr.temaClaro}
       className={`p-2 rounded-full text-[var(--c-texto)] hover:bg-[var(--c-borde-20)] transition-colors ${className}`}
     >
       {claro ? (

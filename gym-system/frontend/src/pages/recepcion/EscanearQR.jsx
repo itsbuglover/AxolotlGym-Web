@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import api from "../../api/api.js";
+import { useIdioma } from "../../context/IdiomaContext.jsx";
 import Badge from "../../components/ui/Badge.jsx";
 import Boton from "../../components/ui/Boton.jsx";
 
@@ -14,6 +15,7 @@ function extraerMembresia(texto) {
 }
 
 export default function EscanearQR() {
+  const { tr, traducirMsg } = useIdioma();
   const [cliente, setCliente] = useState(null);
   const [aviso, setAviso] = useState(null); // { tipo: "ok" | "error", texto }
   const [estadoCamara, setEstadoCamara] = useState("apagada"); // apagada | iniciando | activa | error
@@ -97,20 +99,20 @@ export default function EscanearQR() {
       );
       if (!encontrado) {
         setCliente(null);
-        setAviso({ tipo: "error", texto: "Codigo no reconocido" });
+        setAviso({ tipo: "error", texto: tr.qr.codigoNoReconocido });
       } else {
         setCliente(encontrado);
       }
     } catch {
       setCliente(null);
-      setAviso({ tipo: "error", texto: "No se pudo consultar al cliente" });
+      setAviso({ tipo: "error", texto: tr.qr.errorConsulta });
     }
   }
 
   async function registrar(tipo) {
     if (!cliente) return;
     if (cliente.estado !== "activo") {
-      setAviso({ tipo: "error", texto: "Membresia vencida. Pasa a renovar" });
+      setAviso({ tipo: "error", texto: tr.qr.membresiaVencida });
       return;
     }
     try {
@@ -120,10 +122,10 @@ export default function EscanearQR() {
       });
       setAviso({
         tipo: "ok",
-        texto: data.mensaje || (tipo === "entrada" ? "Entrada registrada" : "Salida registrada"),
+        texto: traducirMsg(data.mensaje) || (tipo === "entrada" ? tr.qr.entradaRegistrada : tr.qr.salidaRegistrada),
       });
     } catch (err) {
-      setAviso({ tipo: "error", texto: err.response?.data?.mensaje || "Error al registrar" });
+      setAviso({ tipo: "error", texto: traducirMsg(err.response?.data?.mensaje) || tr.qr.errorRegistrar });
     }
   }
 
@@ -131,12 +133,12 @@ export default function EscanearQR() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-[var(--c-texto)] mb-6">Escanear codigo QR</h1>
+      <h1 className="text-xl font-semibold text-[var(--c-texto)] mb-6">{tr.qr.titulo}</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* ---------- Camara ---------- */}
         <div className={tarjeta}>
-          <p className="text-sm font-medium text-[var(--c-texto)] mb-4">Escanear codigo</p>
+          <p className="text-sm font-medium text-[var(--c-texto)] mb-4">{tr.qr.escanearCodigo}</p>
 
           <div className="relative aspect-square rounded-lg overflow-hidden bg-[var(--c-campo)] mb-4">
             <div
@@ -146,17 +148,17 @@ export default function EscanearQR() {
 
             {estadoCamara !== "activa" && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center text-sm text-[var(--c-texto-tenue)]">
-                {estadoCamara === "iniciando" && <p>Abriendo camara...</p>}
+                {estadoCamara === "iniciando" && <p>{tr.qr.abriendoCamara}</p>}
                 {estadoCamara === "apagada" && (
                   <>
-                    <p>La camara esta apagada</p>
-                    <Boton onClick={iniciarCamara}>Encender camara</Boton>
+                    <p>{tr.qr.camaraApagada}</p>
+                    <Boton onClick={iniciarCamara}>{tr.qr.encenderCamara}</Boton>
                   </>
                 )}
                 {estadoCamara === "error" && (
                   <>
-                    <p>No se pudo abrir la camara. Revisa que el navegador tenga permiso para usarla.</p>
-                    <Boton variante="outline" onClick={iniciarCamara}>Reintentar</Boton>
+                    <p>{tr.qr.errorCamara}</p>
+                    <Boton variante="outline" onClick={iniciarCamara}>{tr.qr.reintentar}</Boton>
                   </>
                 )}
               </div>
@@ -170,19 +172,19 @@ export default function EscanearQR() {
 
           {estadoCamara === "activa" && (
             <Boton variante="outline" className="w-full" onClick={apagarCamara}>
-              Apagar camara
+              {tr.qr.apagarCamara}
             </Boton>
           )}
         </div>
 
         {/* ---------- Informacion del cliente ---------- */}
         <div className={tarjeta}>
-          <p className="text-sm font-medium text-[var(--c-texto)]">Informacion del cliente</p>
+          <p className="text-sm font-medium text-[var(--c-texto)]">{tr.qr.infoCliente}</p>
           <div className="my-4 h-px bg-[var(--c-borde-suave)]" />
 
           {!cliente ? (
             <p className="text-sm text-[var(--c-texto-tenue)] text-center py-10">
-              Escanea un codigo para ver la informacion del cliente
+              {tr.qr.instruccionEscaneo}
             </p>
           ) : (
             <div className="flex items-center gap-4">
@@ -191,12 +193,12 @@ export default function EscanearQR() {
               </div>
               <div className="min-w-0">
                 <p className="text-lg font-bold text-[var(--c-texto)] truncate">{cliente.nombre}</p>
-                <p className="text-sm text-[var(--c-texto-sec)] mt-1">Membresia: {cliente.numMembresia}</p>
+                <p className="text-sm text-[var(--c-texto-sec)] mt-1">{tr.qr.membresia}: {cliente.numMembresia}</p>
                 <p className="text-sm text-[var(--c-texto-sec)] mt-1 flex items-center gap-2">
-                  Estado: <Badge estado={cliente.estado} />
+                  {tr.qr.estado}: <Badge estado={cliente.estado} />
                 </p>
                 {cliente.fechaRegistro && (
-                  <p className="text-sm text-[var(--c-texto-sec)] mt-1">Registro: {cliente.fechaRegistro}</p>
+                  <p className="text-sm text-[var(--c-texto-sec)] mt-1">{tr.qr.registro}: {cliente.fechaRegistro}</p>
                 )}
               </div>
             </div>
@@ -218,10 +220,10 @@ export default function EscanearQR() {
 
           <div className="flex gap-3">
             <Boton variante="exito" className="flex-1" disabled={!cliente} onClick={() => registrar("entrada")}>
-              Entrada
+              {tr.qr.entrada}
             </Boton>
             <Boton variante="peligro" className="flex-1" disabled={!cliente} onClick={() => registrar("salida")}>
-              Salida
+              {tr.qr.salida}
             </Boton>
           </div>
         </div>
