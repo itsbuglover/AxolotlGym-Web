@@ -1,4 +1,4 @@
-import { supabase, consulta, manejar, errorHttp, numero } from "../data/supabase.js";
+import { supabase, rpc, consulta, manejar, errorHttp, numero } from "../data/supabase.js";
 
 const tabla = () => supabase.from("servicios");
 const aServicio = (s) => ({ ...s, precio: numero(s.precio) });
@@ -16,18 +16,33 @@ export const listarServicios = manejar(async (req, res) => {
 });
 
 export const crearServicio = manejar(async (req, res) => {
-  const [servicio] = await consulta(tabla().insert(validar(req.body)).select());
-  res.status(201).json({ ok: true, servicio: aServicio(servicio) });
+  const d = validar(req.body);
+  const id = await rpc("crear_servicio", {
+    p_actor_gmail: req.usuario.correo,
+    p_nombre: d.nombre,
+    p_duracion: d.duracion,
+    p_precio: d.precio,
+  });
+  res.status(201).json({ ok: true, servicio: aServicio({ id, ...d }) });
 });
 
 export const actualizarServicio = manejar(async (req, res) => {
-  const filas = await consulta(tabla().update(validar(req.body)).eq("id", Number(req.params.id)).select());
-  if (!filas.length) throw errorHttp(404, "Servicio no encontrado");
-  res.json({ ok: true, servicio: aServicio(filas[0]) });
+  const id = Number(req.params.id);
+  const d = validar(req.body);
+  await rpc("actualizar_servicio", {
+    p_actor_gmail: req.usuario.correo,
+    p_id: id,
+    p_nombre: d.nombre,
+    p_duracion: d.duracion,
+    p_precio: d.precio,
+  });
+  res.json({ ok: true, servicio: aServicio({ id, ...d }) });
 });
 
 export const eliminarServicio = manejar(async (req, res) => {
-  const filas = await consulta(tabla().delete().eq("id", Number(req.params.id)).select());
-  if (!filas.length) throw errorHttp(404, "Servicio no encontrado");
+  await rpc("eliminar_servicio", {
+    p_actor_gmail: req.usuario.correo,
+    p_id: Number(req.params.id),
+  });
   res.json({ ok: true, mensaje: "Servicio eliminado" });
 });

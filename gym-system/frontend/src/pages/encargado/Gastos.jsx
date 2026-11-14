@@ -125,10 +125,15 @@ export default function Gastos() {
       categoria: form.categoria.trim(),
     };
 
-    if (editandoId) {
-      await api.put(`/gastos/${editandoId}`, datos);
-    } else {
-      await api.post("/gastos", datos);
+    try {
+      if (editandoId) {
+        await api.put(`/gastos/${editandoId}`, datos);
+      } else {
+        await api.post("/gastos", datos);
+      }
+    } catch (err) {
+      setErrores((er) => ({ ...er, general: err.response?.data?.mensaje || "No se pudo guardar el gasto" }));
+      return;
     }
 
     cerrarModal();
@@ -194,6 +199,7 @@ export default function Gastos() {
             onChange={cambiar("fecha")}
           />
           <Err msg={errores.fecha} />
+          <Err msg={errores.general} />
 
           <Boton type="submit" className="w-full mt-2">
             {editandoId ? "Guardar cambios" : "Guardar gasto"}

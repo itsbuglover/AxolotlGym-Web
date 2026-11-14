@@ -102,10 +102,15 @@ export default function Servicios() {
       duracion: form.duracion.trim(),
     };
 
-    if (editandoId) {
-      await api.put(`/servicios/${editandoId}`, datos);
-    } else {
-      await api.post("/servicios", datos);
+    try {
+      if (editandoId) {
+        await api.put(`/servicios/${editandoId}`, datos);
+      } else {
+        await api.post("/servicios", datos);
+      }
+    } catch (err) {
+      setErrores((er) => ({ ...er, general: err.response?.data?.mensaje || "No se pudo guardar el servicio" }));
+      return;
     }
 
     cerrarModal();
@@ -166,6 +171,7 @@ export default function Servicios() {
             onChange={cambiar("precio", limpiarDecimal)}
           />
           <Err msg={errores.precio} />
+          <Err msg={errores.general} />
 
           <Boton type="submit" className="w-full mt-2">
             {editandoId ? "Guardar cambios" : "Guardar servicio"}
