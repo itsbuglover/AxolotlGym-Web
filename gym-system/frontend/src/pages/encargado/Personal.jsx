@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../api/api.js";
+import { useIdioma } from "../../context/IdiomaContext.jsx";
 import Table from "../../components/ui/Table.jsx";
 import Badge from "../../components/ui/Badge.jsx";
 import Boton from "../../components/ui/Boton.jsx";
@@ -25,36 +26,6 @@ const limpiarDecimal = (v) => {
   return entero.slice(0, 7) + "." + resto.join("").slice(0, 2);
 };
 
-const vNombre = (v, etiqueta) => {
-  const t = v.trim();
-  if (!t) return `${etiqueta} es obligatorio`;
-  if (t.length < 3) return `${etiqueta}: mínimo 3 letras`;
-  if (!REGEX_LETRAS.test(t)) return `${etiqueta}: solo letras`;
-  return "";
-};
-const vTelefono = (v) => (!v || /^\d{10}$/.test(v) ? "" : "El teléfono debe tener 10 dígitos");
-const vCorreo = (v) => {
-  const t = v.trim();
-  if (!t) return "El correo es obligatorio";
-  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(t) ? "" : "Correo no válido";
-};
-const vPassword = (v) => {
-  if (!v) return "La contraseña es obligatoria";
-  return v.length >= 8 ? "" : "Mínimo 8 caracteres";
-};
-const vMonto = (v, etiqueta) => {
-  if (v === "" || v == null) return `${etiqueta} es obligatorio`;
-  const s = String(v);
-  if (!/^\d+(\.\d{1,2})?$/.test(s) || Number(s) <= 0) return `${etiqueta} debe ser un número mayor a 0`;
-  return "";
-};
-const vEntero = (v, etiqueta) => {
-  if (v === "" || v == null) return `${etiqueta} es obligatorio`;
-  const s = String(v);
-  if (!/^\d+$/.test(s) || Number(s) < 1) return `${etiqueta} debe ser un entero mayor a 0`;
-  return "";
-};
-
 const Err = ({ msg }) =>
   msg ? <p className="text-xs text-[var(--c-rojo)] -mt-2 mb-3">{msg}</p> : null;
 
@@ -78,12 +49,43 @@ const vacio = { nombre: "", telefono: "", correo: "", password: "", rol: "recepc
 
 // PERSONAL del gimnasio: recepcion, instructores y encargados (los clientes van en Clientes)
 export default function Personal() {
+  const { tr, traducirMsg } = useIdioma();
   const [personal, setPersonal] = useState([]);
   const [aviso, setAviso] = useState("");
   const [modalAbierto, setModalAbierto] = useState(false);
   const [editandoId, setEditandoId] = useState(null); // null = creando, id = editando
   const [form, setForm] = useState(vacio);
   const [errores, setErrores] = useState({});
+
+  const vNombre = (v, etiqueta) => {
+    const t = v.trim();
+    if (!t) return tr.val.esObligatorio(etiqueta);
+    if (t.length < 3) return tr.val.minLetras(etiqueta);
+    if (!REGEX_LETRAS.test(t)) return tr.val.soloLetras(etiqueta);
+    return "";
+  };
+  const vTelefono = (v) => (!v || /^\d{10}$/.test(v) ? "" : tr.val.telefono10);
+  const vCorreo = (v) => {
+    const t = v.trim();
+    if (!t) return tr.val.correoObligatorio;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(t) ? "" : tr.val.correoInvalido;
+  };
+  const vPassword = (v) => {
+    if (!v) return tr.val.passwordObligatoria;
+    return v.length >= 8 ? "" : tr.val.passwordMin8;
+  };
+  const vMonto = (v, etiqueta) => {
+    if (v === "" || v == null) return tr.val.esObligatorio(etiqueta);
+    const s = String(v);
+    if (!/^\d+(\.\d{1,2})?$/.test(s) || Number(s) <= 0) return tr.val.numeroMayorCero(etiqueta);
+    return "";
+  };
+  const vEntero = (v, etiqueta) => {
+    if (v === "" || v == null) return tr.val.esObligatorio(etiqueta);
+    const s = String(v);
+    if (!/^\d+$/.test(s) || Number(s) < 1) return tr.val.enteroMayorCero(etiqueta);
+    return "";
+  };
 
   useEffect(() => {
     cargar();
@@ -136,12 +138,12 @@ export default function Personal() {
 
     const esInstructor = form.rol === "instructor";
     const errs = {
-      nombre: vNombre(form.nombre, "Nombre"),
+      nombre: vNombre(form.nombre, tr.personal.nombre),
       telefono: vTelefono(form.telefono),
       correo: vCorreo(form.correo),
       password: editandoId ? "" : vPassword(form.password),
-      costoServicio: esInstructor ? vMonto(form.costoServicio, "El costo") : "",
-      capacidadMaxima: esInstructor ? vEntero(form.capacidadMaxima, "La capacidad") : "",
+      costoServicio: esInstructor ? vMonto(form.costoServicio, tr.personal.costoServicio) : "",
+      capacidadMaxima: esInstructor ? vEntero(form.capacidadMaxima, tr.personal.capacidadMaxima) : "",
     };
     setErrores(errs);
     if (Object.values(errs).some(Boolean)) return;
@@ -160,10 +162,10 @@ export default function Personal() {
         setAviso("");
       } else {
         const { data } = await api.post("/personal", datos);
-        setAviso(data.mensaje || "");
+        setAviso(traducirMsg(data.mensaje) || "");
       }
     } catch (err) {
-      setErrores((er) => ({ ...er, general: err.response?.data?.mensaje || "No se pudo guardar" }));
+      setErrores((er) => ({ ...er, general: traducirMsg(err.response?.data?.mensaje) || tr.personal.errorGuardar }));
       return;
     }
 
@@ -174,25 +176,25 @@ export default function Personal() {
   async function eliminar(id) {
     try {
       const { data } = await api.delete(`/personal/${id}`);
-      setAviso(data.mensaje || "");
+      setAviso(traducirMsg(data.mensaje) || "");
     } catch (err) {
-      setAviso(err.response?.data?.mensaje || "No se pudo eliminar");
+      setAviso(traducirMsg(err.response?.data?.mensaje) || tr.personal.errorEliminar);
     }
     cargar();
   }
 
   const columnas = [
-    { key: "nombre", label: "Nombre" },
-    { key: "rol", label: "Rol", render: (f) => <span className="capitalize">{f.rol}</span> },
-    { key: "correo", label: "Correo" },
-    { key: "estado", label: "Estado", render: (f) => <Badge estado={f.estado} /> },
+    { key: "nombre", label: tr.personal.colNombre },
+    { key: "rol", label: tr.personal.colRol, render: (f) => <span className="capitalize">{tr.roles[f.rol] || f.rol}</span> },
+    { key: "correo", label: tr.personal.colCorreo },
+    { key: "estado", label: tr.personal.colEstado, render: (f) => <Badge estado={f.estado} /> },
     {
       key: "acciones",
-      label: "Acciones",
+      label: tr.acciones,
       render: (f) => (
         <div className="flex gap-2">
-          <Boton variante="outline" onClick={() => abrirEditar(f)}>Editar</Boton>
-          <Boton variante="peligro" onClick={() => eliminar(f.id)}>Eliminar</Boton>
+          <Boton variante="outline" onClick={() => abrirEditar(f)}>{tr.editar}</Boton>
+          <Boton variante="peligro" onClick={() => eliminar(f.id)}>{tr.eliminar}</Boton>
         </div>
       ),
     },
@@ -201,8 +203,8 @@ export default function Personal() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-[var(--c-texto)] mb-6">Personal</h1>
-        <Boton onClick={abrirNuevo}>+ Agregar personal</Boton>
+        <h1 className="text-xl font-semibold text-[var(--c-texto)] mb-6">{tr.personal.titulo}</h1>
+        <Boton onClick={abrirNuevo}>{tr.personal.nuevoBtn}</Boton>
       </div>
 
       {aviso && <p className="text-sm text-[var(--c-ambar-texto)] mb-3">{aviso}</p>}
@@ -211,15 +213,15 @@ export default function Personal() {
 
       <Modal
         abierto={modalAbierto}
-        titulo={editandoId ? "Editar personal" : "Agregar personal"}
+        titulo={editandoId ? tr.personal.modalEditar : tr.personal.modalNuevo}
         onClose={cerrarModal}
       >
         <form onSubmit={guardar} noValidate>
-          <Input label="Nombre" value={form.nombre} onChange={cambiar("nombre", limpiarLetras)} />
+          <Input label={tr.personal.nombre} value={form.nombre} onChange={cambiar("nombre", limpiarLetras)} />
           <Err msg={errores.nombre} />
 
           <Input
-            label="Telefono"
+            label={tr.personal.telefono}
             value={form.telefono}
             inputMode="numeric"
             maxLength={10}
@@ -227,39 +229,39 @@ export default function Personal() {
           />
           <Err msg={errores.telefono} />
 
-          <Input label="Correo (con el que inicia sesion)" type="email" value={form.correo} onChange={cambiar("correo")} />
+          <Input label={tr.personal.correoLogin} type="email" value={form.correo} onChange={cambiar("correo")} />
           <Err msg={errores.correo} />
 
           {!editandoId && (
             <>
-              <Input label="Contraseña inicial" value={form.password} onChange={cambiar("password")} />
+              <Input label={tr.personal.passwordInicial} value={form.password} onChange={cambiar("password")} />
               <Err msg={errores.password} />
             </>
           )}
 
           <SelectPaleta
-            label="Rol"
+            label={tr.personal.rol}
             value={form.rol}
             onChange={cambiar("rol")}
             options={[
-              { value: "recepcion", label: "Recepcion" },
-              { value: "instructor", label: "Instructor" },
+              { value: "recepcion", label: tr.roles.recepcion },
+              { value: "instructor", label: tr.roles.instructor },
             ]}
           />
           <SelectPaleta
-            label="Estado"
+            label={tr.personal.estado}
             value={form.estado}
             onChange={cambiar("estado")}
             options={[
-              { value: "activo", label: "Activo" },
-              { value: "inactivo", label: "Inactivo" },
+              { value: "activo", label: tr.personal.activo },
+              { value: "inactivo", label: tr.personal.inactivo },
             ]}
           />
 
           {form.rol === "instructor" && (
             <>
               <Input
-                label="Costo del servicio"
+                label={tr.personal.costoServicio}
                 inputMode="decimal"
                 value={form.costoServicio}
                 onChange={cambiar("costoServicio", limpiarDecimal)}
@@ -267,7 +269,7 @@ export default function Personal() {
               <Err msg={errores.costoServicio} />
 
               <Input
-                label="Capacidad maxima de clientes"
+                label={tr.personal.capacidadMaxima}
                 inputMode="numeric"
                 value={form.capacidadMaxima}
                 onChange={cambiar("capacidadMaxima", limpiarEntero)}
@@ -279,7 +281,7 @@ export default function Personal() {
           <Err msg={errores.general} />
 
           <Boton type="submit" className="w-full mt-2">
-            {editandoId ? "Guardar cambios" : "Agregar al personal"}
+            {editandoId ? tr.guardarCambios : tr.personal.guardarNuevo}
           </Boton>
         </form>
       </Modal>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../api/api.js";
+import { useIdioma } from "../../context/IdiomaContext.jsx";
 import Table from "../../components/ui/Table.jsx";
 import Boton from "../../components/ui/Boton.jsx";
 import Modal from "../../components/ui/Modal.jsx";
@@ -18,31 +19,32 @@ const limpiarDecimal = (v) => {
   return entero.slice(0, 7) + "." + resto.join("").slice(0, 2);
 };
 
-const vTexto = (v, etiqueta) => {
-  const t = v.trim();
-  if (!t) return `${etiqueta} es obligatorio`;
-  if (t.length < 3) return `${etiqueta}: mínimo 3 caracteres`;
-  if (!REGEX_TEXTO.test(t)) return `${etiqueta}: solo letras y números`;
-  return "";
-};
-const vMonto = (v, etiqueta) => {
-  if (v === "" || v == null) return `${etiqueta} es obligatorio`;
-  const s = String(v);
-  if (!/^\d+(\.\d{1,2})?$/.test(s) || Number(s) <= 0) return `${etiqueta} debe ser un número mayor a 0`;
-  return "";
-};
-
 const Err = ({ msg }) =>
   msg ? <p className="text-xs text-[var(--c-rojo)] -mt-2 mb-3">{msg}</p> : null;
 
 const vacio = { nombre: "", duracion: "", precio: "" };
 
 export default function Servicios() {
+  const { tr, traducirMsg } = useIdioma();
   const [servicios, setServicios] = useState([]);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [editandoId, setEditandoId] = useState(null); // null = creando, id = editando
   const [form, setForm] = useState(vacio);
   const [errores, setErrores] = useState({});
+
+  const vTexto = (v, etiqueta) => {
+    const t = v.trim();
+    if (!t) return tr.val.esObligatorio(etiqueta);
+    if (t.length < 3) return tr.val.minCaracteres(etiqueta);
+    if (!REGEX_TEXTO.test(t)) return tr.val.soloLetrasNumeros(etiqueta);
+    return "";
+  };
+  const vMonto = (v, etiqueta) => {
+    if (v === "" || v == null) return tr.val.esObligatorio(etiqueta);
+    const s = String(v);
+    if (!/^\d+(\.\d{1,2})?$/.test(s) || Number(s) <= 0) return tr.val.numeroMayorCero(etiqueta);
+    return "";
+  };
 
   useEffect(() => {
     cargar();
@@ -89,9 +91,9 @@ export default function Servicios() {
     e.preventDefault();
 
     const errs = {
-      nombre: vTexto(form.nombre, "El nombre"),
-      duracion: vTexto(form.duracion, "La duración"),
-      precio: vMonto(form.precio, "El precio"),
+      nombre: vTexto(form.nombre, tr.servicios.nombre),
+      duracion: vTexto(form.duracion, tr.servicios.duracion),
+      precio: vMonto(form.precio, tr.servicios.precio),
     };
     setErrores(errs);
     if (Object.values(errs).some(Boolean)) return;
@@ -109,7 +111,7 @@ export default function Servicios() {
         await api.post("/servicios", datos);
       }
     } catch (err) {
-      setErrores((er) => ({ ...er, general: err.response?.data?.mensaje || "No se pudo guardar el servicio" }));
+      setErrores((er) => ({ ...er, general: traducirMsg(err.response?.data?.mensaje) || tr.servicios.errorGuardar }));
       return;
     }
 
@@ -123,16 +125,16 @@ export default function Servicios() {
   }
 
   const columnas = [
-    { key: "nombre", label: "Nombre" },
-    { key: "duracion", label: "Duracion" },
-    { key: "precio", label: "Precio", render: (f) => `$${f.precio}` },
+    { key: "nombre", label: tr.servicios.colNombre },
+    { key: "duracion", label: tr.servicios.colDuracion },
+    { key: "precio", label: tr.servicios.colPrecio, render: (f) => `$${f.precio}` },
     {
       key: "acciones",
-      label: "Acciones",
+      label: tr.acciones,
       render: (f) => (
         <div className="flex gap-2">
-          <Boton variante="outline" onClick={() => abrirEditar(f)}>Editar</Boton>
-          <Boton variante="peligro" onClick={() => eliminar(f.id)}>Eliminar</Boton>
+          <Boton variante="outline" onClick={() => abrirEditar(f)}>{tr.editar}</Boton>
+          <Boton variante="peligro" onClick={() => eliminar(f.id)}>{tr.eliminar}</Boton>
         </div>
       ),
     },
@@ -141,31 +143,31 @@ export default function Servicios() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-[var(--c-texto)] mb-6">Servicios</h1>
-        <Boton onClick={abrirNuevo}>+ Nuevo servicio</Boton>
+        <h1 className="text-xl font-semibold text-[var(--c-texto)] mb-6">{tr.servicios.titulo}</h1>
+        <Boton onClick={abrirNuevo}>{tr.servicios.nuevoBtn}</Boton>
       </div>
 
       <Table columnas={columnas} filas={servicios} />
 
       <Modal
         abierto={modalAbierto}
-        titulo={editandoId ? "Editar servicio" : "Nuevo servicio"}
+        titulo={editandoId ? tr.servicios.modalEditar : tr.servicios.modalNuevo}
         onClose={cerrarModal}
       >
         <form onSubmit={guardar} noValidate>
-          <Input label="Nombre" value={form.nombre} onChange={cambiar("nombre", limpiarTexto)} />
+          <Input label={tr.servicios.nombre} value={form.nombre} onChange={cambiar("nombre", limpiarTexto)} />
           <Err msg={errores.nombre} />
 
           <Input
-            label="Duracion"
-            placeholder="ej. 1 mes"
+            label={tr.servicios.duracion}
+            placeholder={tr.servicios.duracionPlaceholder}
             value={form.duracion}
             onChange={cambiar("duracion", limpiarTexto)}
           />
           <Err msg={errores.duracion} />
 
           <Input
-            label="Precio"
+            label={tr.servicios.precio}
             inputMode="decimal"
             value={form.precio}
             onChange={cambiar("precio", limpiarDecimal)}
@@ -174,7 +176,7 @@ export default function Servicios() {
           <Err msg={errores.general} />
 
           <Boton type="submit" className="w-full mt-2">
-            {editandoId ? "Guardar cambios" : "Guardar servicio"}
+            {editandoId ? tr.guardarCambios : tr.servicios.guardarNuevo}
           </Boton>
         </form>
       </Modal>

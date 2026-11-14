@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../api/api.js";
+import { useIdioma } from "../../context/IdiomaContext.jsx";
 import Table from "../../components/ui/Table.jsx";
 import Boton from "../../components/ui/Boton.jsx";
 import Modal from "../../components/ui/Modal.jsx";
@@ -21,36 +22,9 @@ const limpiarDecimal = (v) => {
   return entero.slice(0, 7) + "." + resto.join("").slice(0, 2);
 };
 
-const vConcepto = (v) => {
-  const t = v.trim();
-  if (!t) return "El concepto es obligatorio";
-  if (t.length < 3) return "Concepto: mínimo 3 caracteres";
-  if (!REGEX_TEXTO.test(t)) return "Concepto: solo letras y números";
-  return "";
-};
-const vCategoria = (v) => {
-  const t = v.trim();
-  if (!t) return "La categoría es obligatoria";
-  if (t.length < 3) return "Categoría: mínimo 3 letras";
-  if (!REGEX_LETRAS.test(t)) return "Categoría: solo letras";
-  return "";
-};
-const vMonto = (v) => {
-  if (v === "" || v == null) return "El monto es obligatorio";
-  const s = String(v);
-  if (!/^\d+(\.\d{1,2})?$/.test(s) || Number(s) <= 0) return "El monto debe ser un número mayor a 0";
-  return "";
-};
-
 // Fecha de hoy en hora local (YYYY-MM-DD)
 const hoyLocal = () =>
   new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-
-const vFecha = (v) => {
-  if (!v) return "La fecha es obligatoria";
-  if (v > hoyLocal()) return "La fecha no puede ser futura";
-  return "";
-};
 
 const Err = ({ msg }) =>
   msg ? <p className="text-xs text-[var(--c-rojo)] -mt-2 mb-3">{msg}</p> : null;
@@ -58,11 +32,38 @@ const Err = ({ msg }) =>
 const vacio = { concepto: "", categoria: "", monto: "", fecha: "" };
 
 export default function Gastos() {
+  const { tr, traducirMsg } = useIdioma();
   const [gastos, setGastos] = useState([]);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [editandoId, setEditandoId] = useState(null); // null = creando, id = editando
   const [form, setForm] = useState(vacio);
   const [errores, setErrores] = useState({});
+
+  const vConcepto = (v) => {
+    const t = v.trim();
+    if (!t) return tr.val.esObligatorio(tr.gastos.concepto);
+    if (t.length < 3) return tr.val.minCaracteres(tr.gastos.concepto);
+    if (!REGEX_TEXTO.test(t)) return tr.val.soloLetrasNumeros(tr.gastos.concepto);
+    return "";
+  };
+  const vCategoria = (v) => {
+    const t = v.trim();
+    if (!t) return tr.val.esObligatorio(tr.gastos.categoria);
+    if (t.length < 3) return tr.val.minLetras(tr.gastos.categoria);
+    if (!REGEX_LETRAS.test(t)) return tr.val.soloLetras(tr.gastos.categoria);
+    return "";
+  };
+  const vMonto = (v) => {
+    if (v === "" || v == null) return tr.val.esObligatorio(tr.gastos.monto);
+    const s = String(v);
+    if (!/^\d+(\.\d{1,2})?$/.test(s) || Number(s) <= 0) return tr.val.numeroMayorCero(tr.gastos.monto);
+    return "";
+  };
+  const vFecha = (v) => {
+    if (!v) return tr.val.fechaObligatoria;
+    if (v > hoyLocal()) return tr.val.fechaFutura;
+    return "";
+  };
 
   useEffect(() => {
     cargar();
@@ -132,7 +133,7 @@ export default function Gastos() {
         await api.post("/gastos", datos);
       }
     } catch (err) {
-      setErrores((er) => ({ ...er, general: err.response?.data?.mensaje || "No se pudo guardar el gasto" }));
+      setErrores((er) => ({ ...er, general: traducirMsg(err.response?.data?.mensaje) || tr.gastos.errorGuardar }));
       return;
     }
 
@@ -146,17 +147,17 @@ export default function Gastos() {
   }
 
   const columnas = [
-    { key: "concepto", label: "Concepto" },
-    { key: "categoria", label: "Categoria" },
-    { key: "monto", label: "Monto", render: (f) => `$${f.monto}` },
-    { key: "fecha", label: "Fecha" },
+    { key: "concepto", label: tr.gastos.colConcepto },
+    { key: "categoria", label: tr.gastos.colCategoria },
+    { key: "monto", label: tr.gastos.colMonto, render: (f) => `$${f.monto}` },
+    { key: "fecha", label: tr.gastos.colFecha },
     {
       key: "acciones",
-      label: "Acciones",
+      label: tr.acciones,
       render: (f) => (
         <div className="flex gap-2">
-          <Boton variante="outline" onClick={() => abrirEditar(f)}>Editar</Boton>
-          <Boton variante="peligro" onClick={() => eliminar(f.id)}>Eliminar</Boton>
+          <Boton variante="outline" onClick={() => abrirEditar(f)}>{tr.editar}</Boton>
+          <Boton variante="peligro" onClick={() => eliminar(f.id)}>{tr.eliminar}</Boton>
         </div>
       ),
     },
@@ -165,26 +166,26 @@ export default function Gastos() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-[var(--c-texto)] mb-6">Gastos</h1>
-        <Boton onClick={abrirNuevo}>+ Nuevo gasto</Boton>
+        <h1 className="text-xl font-semibold text-[var(--c-texto)] mb-6">{tr.gastos.titulo}</h1>
+        <Boton onClick={abrirNuevo}>{tr.gastos.nuevoBtn}</Boton>
       </div>
 
       <Table columnas={columnas} filas={gastos} />
 
       <Modal
         abierto={modalAbierto}
-        titulo={editandoId ? "Editar gasto" : "Nuevo gasto"}
+        titulo={editandoId ? tr.gastos.modalEditar : tr.gastos.modalNuevo}
         onClose={cerrarModal}
       >
         <form onSubmit={guardar} noValidate>
-          <Input label="Concepto" value={form.concepto} onChange={cambiar("concepto", limpiarTexto)} />
+          <Input label={tr.gastos.concepto} value={form.concepto} onChange={cambiar("concepto", limpiarTexto)} />
           <Err msg={errores.concepto} />
 
-          <Input label="Categoria" value={form.categoria} onChange={cambiar("categoria", limpiarLetras)} />
+          <Input label={tr.gastos.categoria} value={form.categoria} onChange={cambiar("categoria", limpiarLetras)} />
           <Err msg={errores.categoria} />
 
           <Input
-            label="Monto"
+            label={tr.gastos.monto}
             inputMode="decimal"
             value={form.monto}
             onChange={cambiar("monto", limpiarDecimal)}
@@ -192,7 +193,7 @@ export default function Gastos() {
           <Err msg={errores.monto} />
 
           <Input
-            label="Fecha"
+            label={tr.gastos.fecha}
             type="date"
             max={hoyLocal()}
             value={form.fecha}
@@ -202,7 +203,7 @@ export default function Gastos() {
           <Err msg={errores.general} />
 
           <Boton type="submit" className="w-full mt-2">
-            {editandoId ? "Guardar cambios" : "Guardar gasto"}
+            {editandoId ? tr.guardarCambios : tr.gastos.guardarNuevo}
           </Boton>
         </form>
       </Modal>
