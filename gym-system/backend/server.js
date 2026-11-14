@@ -13,6 +13,7 @@ import reportesRoutes from "./src/routes/reportes.routes.js";
 import dashboardRoutes from "./src/routes/dashboard.routes.js";
 import asesoriasRoutes from "./src/routes/asesorias.routes.js";
 import qrRoutes from "./src/routes/qr.routes.js";
+import pagosRoutes from "./src/routes/pagos.routes.js";   
 
 const app = express();
 app.use(cors());
@@ -29,6 +30,7 @@ app.use("/api/reportes", reportesRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/asesorias", asesoriasRoutes);
 app.use("/api/qr", qrRoutes);
+app.use("/api/pagos", pagosRoutes);                    
 
 app.get("/", (req, res) => {
   res.json({ ok: true, mensaje: "API Gym System activa" });
